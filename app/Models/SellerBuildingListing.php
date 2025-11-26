@@ -14,7 +14,8 @@ class SellerBuildingListing extends Model
     protected $fillable = [
         'user_id',
         'property_code',
-         'status',  
+        'status',
+
         'district',
         'area',
         'street_name',
@@ -34,8 +35,12 @@ class SellerBuildingListing extends Model
         'price_per_sqft',
         'negotiability',
         'expected_advance_pct',
-        'documents',
         'sell_timeline',
+
+        // 👇 add these to match your controller
+        'documents',
+        'photos',
+        // 'videos', // only if you create this column in DB and use it
     ];
 
     protected $casts = [
@@ -44,7 +49,11 @@ class SellerBuildingListing extends Model
         'expected_price'   => 'decimal:2',
         'price_per_sqft'   => 'decimal:2',
         'lift_available'   => 'boolean',
+
+        // 👇 important for JSON columns
         'documents'        => 'array',
+        'photos'           => 'array',
+        // 'videos'        => 'array', // if you add videos json column
     ];
 
     public function user()

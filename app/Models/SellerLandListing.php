@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Str;   // 👈 add this line
+
 
 class SellerLandListing extends Model
 {
@@ -59,6 +62,28 @@ class SellerLandListing extends Model
         'videos'                 => 'array',
         'documents'              => 'array',
     ];
+
+     protected static function booted()
+    {
+        static::creating(function (SellerLandListing $model) {
+            // Ensure user_id
+            if (empty($model->user_id) && Auth::check()) {
+                $model->user_id = Auth::id();
+            }
+
+            // Default status
+            if (empty($model->status)) {
+                $model->status = 'normal';
+            }
+
+            // Default property code
+            if (empty($model->property_code)) {
+                // You can replace this with your generatePropertyCode logic if you prefer
+                $model->property_code = 'LND-' . strtoupper(Str::random(6));
+            }
+        });
+    }
+
 
     public function user()
     {

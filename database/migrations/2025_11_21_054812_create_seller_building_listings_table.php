@@ -55,6 +55,7 @@ return new class extends Migration
 
             // Documents
             $table->json('documents')->nullable(); // permit, completion, ownership, etc.
+            $table->json('photos')->nullable(); 
 
             // Timeline
             $table->string('sell_timeline', 100)->nullable();

@@ -25,21 +25,7 @@
                             @enderror
                         </div>
 
-                        {{-- Phone Number --}}
-                        <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input
-                                type="tel"
-                                id="phone"
-                                name="phone"
-                                value="{{ old('phone') }}"
-                                placeholder="+91 1234567890"
-                                required
-                            >
-                            @error('phone')
-                                <div class="input-error">{{ $message }}</div>
-                            @enderror
-                        </div>
+                      
 
                         {{-- Email --}}
                         <div class="form-group">

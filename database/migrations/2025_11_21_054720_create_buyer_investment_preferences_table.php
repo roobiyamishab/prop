@@ -37,6 +37,11 @@ return new class extends Migration
 
             $table->decimal('profit_expectation_year', 14, 2)->nullable(); // expected profit/year
 
+            // 🔹 Super admin who created this investment requirement
+            $table->unsignedBigInteger('created_by_admin_id')->nullable();
+            // or if you have an `admins` table and want FK:
+            // $table->foreignId('created_by_admin_id')->nullable()->constrained('admins')->nullOnDelete();
+
             $table->timestamps();
         });
     }

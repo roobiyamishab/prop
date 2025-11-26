@@ -20,6 +20,7 @@ class BuyerInvestmentPreference extends Model
         'investment_budget_min',
         'investment_budget_max',
         'profit_expectation_year',
+        'created_by_admin_id',
     ];
 
     protected $casts = [

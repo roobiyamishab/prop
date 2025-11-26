@@ -341,5 +341,4 @@ public function updateInvestment(Request $request, BuyerInvestmentPreference $in
 }
 
 
-
 }

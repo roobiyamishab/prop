@@ -315,5 +315,144 @@ document.addEventListener('click', function (e) {
     e.target.style.display = 'none';
   }
 });
+(function () {
+  const modal     = document.getElementById('statusEditModal');
+  if (!modal) return;
 
+  const form      = document.getElementById('statusEditForm');
+  const statusSel = document.getElementById('statusSelect');
+  const closeBtn  = modal.querySelector('.status-modal-close');
+  const cancelBtn = modal.querySelector('.status-modal-cancel');
+  const backdrop  = modal.querySelector('.status-modal-backdrop');
+
+  function openStatusModal(url, currentStatus) {
+    if (!form || !statusSel) return;
+
+    // Set target URL for PATCH
+    form.action = url;
+
+    // Normalise and pre-select status
+    const normalized = (currentStatus || 'normal').toLowerCase();
+    const values = Array.from(statusSel.options).map(o => o.value);
+    statusSel.value = values.includes(normalized) ? normalized : 'normal';
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeStatusModal() {
+    modal.classList.add('hidden');
+    const note = document.getElementById('statusNote');
+    if (note) note.value = '';
+  }
+
+  // Attach listeners to "Edit status" buttons
+  document.querySelectorAll('.js-edit-status-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const url = this.dataset.url;
+      const currentStatus = this.dataset.currentStatus || 'normal';
+      if (!url) return;
+      openStatusModal(url, currentStatus);
+    });
+  });
+
+  // Close actions
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeStatusModal);
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeStatusModal);
+  }
+  if (backdrop) {
+    backdrop.addEventListener('click', closeStatusModal);
+  }
+
+  // ESC key closes modal
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeStatusModal();
+    }
+  });
+})();
+ (function () {
+    // ----- STATUS MODAL -----
+    const statusModal     = document.getElementById('statusEditModal');
+    const statusForm      = document.getElementById('statusEditForm');
+    const statusSel       = document.getElementById('statusSelect');
+    const statusCloseBtn  = statusModal?.querySelector('.status-modal-close');
+    const statusCancelBtn = statusModal?.querySelector('.status-modal-cancel');
+    const statusBackdrop  = statusModal?.querySelector('.status-modal-backdrop');
+
+    function openStatusModal(url, currentStatus) {
+      if (!statusModal || !statusForm || !statusSel) return;
+      statusForm.action = url;
+      const normalized = (currentStatus || 'normal').toLowerCase();
+      const values = Array.from(statusSel.options).map(o => o.value);
+      statusSel.value = values.includes(normalized) ? normalized : 'normal';
+      statusModal.classList.remove('hidden');
+    }
+
+    function closeStatusModal() {
+      if (!statusModal) return;
+      statusModal.classList.add('hidden');
+      const note = document.getElementById('statusNote');
+      if (note) note.value = '';
+    }
+
+    document.querySelectorAll('.js-edit-status-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const url = this.dataset.url;
+        const currentStatus = this.dataset.currentStatus || 'normal';
+        if (!url) return;
+        openStatusModal(url, currentStatus);
+      });
+    });
+
+    statusCloseBtn?.addEventListener('click', closeStatusModal);
+    statusCancelBtn?.addEventListener('click', closeStatusModal);
+    statusBackdrop?.addEventListener('click', closeStatusModal);
+
+    // ----- DETAILS MODALS (per listing) -----
+    function openDetailsModal(modalId) {
+      const m = document.getElementById(modalId);
+      if (!m) return;
+      m.classList.remove('hidden');
+    }
+
+    function closeDetailsModal(modal) {
+      modal.classList.add('hidden');
+    }
+
+    document.querySelectorAll('.js-edit-details-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const modalId = this.dataset.modalId;
+        if (!modalId) return;
+        openDetailsModal(modalId);
+      });
+    });
+
+    // Delegate close events
+    document.querySelectorAll('.details-modal').forEach(modal => {
+      const closeBtn  = modal.querySelector('.details-modal-close');
+      const cancelBtn = modal.querySelector('.details-modal-cancel');
+      const backdrop  = modal.querySelector('.details-modal-backdrop');
+
+      closeBtn?.addEventListener('click', () => closeDetailsModal(modal));
+      cancelBtn?.addEventListener('click', () => closeDetailsModal(modal));
+      backdrop?.addEventListener('click', () => closeDetailsModal(modal));
+    });
+
+    // Global ESC to close any open modal
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (statusModal && !statusModal.classList.contains('hidden')) {
+          closeStatusModal();
+        }
+        document.querySelectorAll('.details-modal').forEach(modal => {
+          if (!modal.classList.contains('hidden')) {
+            closeDetailsModal(modal);
+          }
+        });
+      }
+    });
+  })();
 

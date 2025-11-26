@@ -26,6 +26,7 @@ class BuyerBuildingPreference extends Model
         'micro_locations',
         'distance_requirement',
         'rent_expectation',
+        'created_by_admin_id',
     ];
 
     protected $casts = [

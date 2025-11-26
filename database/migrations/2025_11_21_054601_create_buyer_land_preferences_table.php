@@ -19,6 +19,13 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
+            // 🔹 NEW: Which admin created this preference (if created from admin panel)
+            // nullable because normal buyers (front-end) won't have an admin creator
+            $table->foreignId('created_by_admin_id')
+                  ->nullable()
+                  ->constrained('admins')
+                  ->nullOnDelete();
+
             // 🔹 Status of this requirement
             // active   = currently searching
             // urgent   = high-priority / immediate requirement

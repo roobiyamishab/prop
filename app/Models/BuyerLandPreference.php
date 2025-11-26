@@ -30,6 +30,7 @@ class BuyerLandPreference extends Model
         'property_condition',
         'amenities_preference',
         'infra_preference',
+        'created_by_admin_id',
     ];
 
     protected $casts = [
