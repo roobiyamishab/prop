@@ -558,489 +558,434 @@
   {{-- BUILDING TAB --}}
  {{-- BUILDING TAB --}}
 <div id="buyer-building-panel" class="buyer-tab-panel">
-  @if($buyerBuilding)
-    @php
-      $bldStatus   = $buyerBuilding->status ?? 'active';
-      $distanceReq = $buyerBuilding->distance_requirement
-        ? explode(',', $buyerBuilding->distance_requirement)
-        : [];
-    @endphp
+  @if($adminBuildingPreferences->isNotEmpty())
+    @foreach($adminBuildingPreferences as $buyerBuilding)
+      @php
+        $bldStatus   = $buyerBuilding->status ?? 'active';
+        $distanceReq = $buyerBuilding->distance_requirement
+          ? explode(',', $buyerBuilding->distance_requirement)
+          : [];
+      @endphp
 
-    <div class="buyer-card">
-      <div class="buyer-card-header">
-        <div>
-          <div class="buyer-code">REQ-BLD-{{ $buyerBuilding->id }}</div>
-          <span class="buyer-chip
-            {{ $bldStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
-            {{ $bldStatus === 'completed' ? 'buyer-chip-soft' : '' }}
-            {{ $bldStatus === 'active' ? 'buyer-chip-primary' : '' }}
-          ">
-            {{ ucfirst($bldStatus) }}
-          </span>
-        </div>
-
-        <div class="buyer-actions">
-          {{-- EDIT → open modal --}}
-          <button type="button"
-                  class="buyer-action-btn"
-                  onclick="openEditModal('building')">
-            Edit
-          </button>
-
-          {{-- Mark Urgent --}}
-          @if($bldStatus !== 'urgent')
-            <form method="POST"
-                  action=""
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="urgent">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
-                Mark Urgent
-              </button>
-            </form>
-          @endif
-
-          {{-- Mark Completed --}}
-          @if($bldStatus !== 'completed')
-            <form method="POST"
-                  action=""
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="completed">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-success">
-                Mark Completed
-              </button>
-            </form>
-          @endif
-        </div>
-      </div>
-
-      <div class="buyer-card-body">
-        <div class="buyer-grid">
+      <div class="buyer-card">
+        <div class="buyer-card-header">
           <div>
-            <div class="buyer-label">Building Type</div>
-            <div class="buyer-value">{{ $buyerBuilding->building_type ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Districts</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->preferred_districts ? implode(', ', $buyerBuilding->preferred_districts) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Built-up Area</div>
-            <div class="buyer-value">
-              @if($buyerBuilding->area_min || $buyerBuilding->area_max)
-                {{ number_format($buyerBuilding->area_min ?? 0) }} –
-                {{ number_format($buyerBuilding->area_max ?? $buyerBuilding->area_min ?? 0) }} sqft
-              @else
-                —
-              @endif
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Budget</div>
-            <div class="buyer-value">
-              @if($buyerBuilding->total_budget_min)
-                ₹{{ number_format($buyerBuilding->total_budget_min) }}
-                @if($buyerBuilding->total_budget_max && $buyerBuilding->total_budget_max != $buyerBuilding->total_budget_min)
-                  – ₹{{ number_format($buyerBuilding->total_budget_max) }}
-                @endif
-              @else
-                —
-              @endif
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Micro-locations</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->micro_locations ? implode(', ', $buyerBuilding->micro_locations) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Distance Requirements</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->distance_requirement ?: '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Rent Expectation</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->rent_expectation ? '₹' . number_format($buyerBuilding->rent_expectation) . ' / month' : '—' }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div> {{-- .buyer-card --}}
+            <div class="buyer-code">REQ-BLD-{{ $buyerBuilding->id }}</div>
 
-    {{-- === EDIT BUILDING PREFERENCE MODAL === --}}
-    <div id="edit-building-modal" class="buyer-modal-overlay" style="display:none;">
-      <div class="buyer-modal">
-        <div class="buyer-modal-header">
-          <h2>Edit Building Preference</h2>
-          <button type="button" class="buyer-modal-close" onclick="closeEditModal('building')">×</button>
-        </div>
+            {{-- Show which buyer this preference belongs to --}}
+            @if($buyerBuilding->user)
+              <div style="font-size:12px; color:#6b7280;">
+                Buyer: {{ $buyerBuilding->user->name }} (ID: {{ $buyerBuilding->user->id }})
+              </div>
+            @endif
 
-        <form method="POST"
-              action=""
-              class="module-form">
-          @csrf
-          @method('PATCH')
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>District(s)</label>
-              <input type="text"
-                     name="districts"
-                     value="{{ old('districts', is_array($buyerBuilding->preferred_districts) ? implode(', ', $buyerBuilding->preferred_districts) : $buyerBuilding->preferred_districts) }}"
-                     placeholder="e.g., Ernakulam, Kottayam">
-            </div>
-            <div class="form-group">
-              <label>Type of Building</label>
-              <select name="building_type">
-                @php
-                  $types = [
-                    'Commercial','Office','Retail','Apartment',
-                    'Villa','Mixed-Use','Hotel','Hospital','Warehouse'
-                  ];
-                @endphp
-                @foreach($types as $type)
-                  <option value="{{ $type }}"
-                          {{ ($buyerBuilding->building_type === $type) ? 'selected' : '' }}>
-                    {{ $type }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
+            <span class="buyer-chip
+              {{ $bldStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
+              {{ $bldStatus === 'completed' ? 'buyer-chip-soft' : '' }}
+              {{ $bldStatus === 'active' ? 'buyer-chip-primary' : '' }}
+            ">
+              {{ ucfirst($bldStatus) }}
+            </span>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Built-up Area Min (sq.ft)</label>
-              <input type="number"
-                     name="area_min"
-                     value="{{ old('area_min', $buyerBuilding->area_min) }}"
-                     placeholder="Minimum area">
-            </div>
-            <div class="form-group">
-              <label>Built-up Area Max (sq.ft)</label>
-              <input type="number"
-                     name="area_max"
-                     value="{{ old('area_max', $buyerBuilding->area_max) }}"
-                     placeholder="Maximum area">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Frontage Requirement (ft)</label>
-              <input type="number"
-                     name="frontage_min"
-                     value="{{ old('frontage_min', $buyerBuilding->frontage_min) }}"
-                     placeholder="Enter frontage">
-            </div>
-            <div class="form-group">
-              <label>Age of Building Acceptable</label>
-              <select name="age_preference">
-                @php
-                  $ageOptions = [
-                    'New (0-5 years)',
-                    'Recent (5-10 years)',
-                    'Moderate (10-20 years)',
-                    'Any age',
-                  ];
-                @endphp
-                @foreach($ageOptions as $opt)
-                  <option value="{{ $opt }}"
-                          {{ ($buyerBuilding->age_preference === $opt) ? 'selected' : '' }}>
-                    {{ $opt }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Total Budget (₹)</label>
-            <input type="number"
-                   name="total_budget"
-                   value="{{ old('total_budget', $buyerBuilding->total_budget_min) }}"
-                   placeholder="Enter total budget">
-          </div>
-
-          <div class="form-group">
-            <label>Micro-location Preferences</label>
-            <input type="text"
-                   name="micro_locations"
-                   value="{{ old('micro_locations', is_array($buyerBuilding->micro_locations) ? implode(', ', $buyerBuilding->micro_locations) : $buyerBuilding->micro_locations) }}"
-                   placeholder="Specific areas you prefer">
-          </div>
-
-          <div class="form-group">
-            <label>Distance Requirements</label>
-            <div class="checkbox-group">
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearHighway"
-                       {{ in_array('nearHighway', $distanceReq) ? 'checked' : '' }}>
-                Near NH/SH
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearCityCentre"
-                       {{ in_array('nearCityCentre', $distanceReq) ? 'checked' : '' }}>
-                Near City Centre
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearHospital"
-                       {{ in_array('nearHospital', $distanceReq) ? 'checked' : '' }}>
-                Near Hospital
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearSchool"
-                       {{ in_array('nearSchool', $distanceReq) ? 'checked' : '' }}>
-                Near School
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearITPark"
-                       {{ in_array('nearITPark', $distanceReq) ? 'checked' : '' }}>
-                Near IT Park
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Rent Expectation (if looking for rental asset)</label>
-            <input type="number"
-                   name="rent_expectation"
-                   value="{{ old('rent_expectation', $buyerBuilding->rent_expectation) }}"
-                   placeholder="Expected monthly rent">
-          </div>
-
-          <div class="buyer-modal-actions">
+          <div class="buyer-actions">
+            {{-- EDIT → open modal (unique per row) --}}
             <button type="button"
-                    class="btn-secondary"
-                    onclick="closeEditModal('building')">
-              Cancel
+                    class="buyer-action-btn"
+                    onclick="openEditModal('building-{{ $buyerBuilding->id }}')">
+              Edit
             </button>
-            <button type="submit" class="btn-primary">
-              Save Changes
-            </button>
+
+            {{-- Mark Urgent --}}
+            @if($bldStatus !== 'urgent')
+              <form method="POST"
+                    action="{{ route('admin.buyers.preferences.building.status', $buyerBuilding) }}"
+                    style="display:inline;">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="status" value="urgent">
+                <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
+                  Mark Urgent
+                </button>
+              </form>
+            @endif
+
+            {{-- Mark Completed --}}
+            @if($bldStatus !== 'completed')
+              <form method="POST"
+                    action="{{ route('admin.buyers.preferences.building.status', $buyerBuilding) }}"
+                    style="display:inline;">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="status" value="completed">
+                <button type="submit" class="buyer-action-btn buyer-action-btn-success">
+                  Mark Completed
+                </button>
+              </form>
+            @endif
           </div>
-        </form>
-      </div>
-    </div> {{-- #edit-building-modal --}}
+        </div>
+
+        <div class="buyer-card-body">
+          <div class="buyer-grid">
+            <div>
+              <div class="buyer-label">Building Type</div>
+              <div class="buyer-value">{{ $buyerBuilding->building_type ?? '—' }}</div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Preferred Districts</div>
+              <div class="buyer-value">
+                {{ $buyerBuilding->preferred_districts ? implode(', ', $buyerBuilding->preferred_districts) : '—' }}
+              </div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Built-up Area</div>
+              <div class="buyer-value">
+                @if($buyerBuilding->area_min || $buyerBuilding->area_max)
+                  {{ number_format($buyerBuilding->area_min ?? 0) }} –
+                  {{ number_format($buyerBuilding->area_max ?? $buyerBuilding->area_min ?? 0) }} sqft
+                @else
+                  —
+                @endif
+              </div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Budget</div>
+              <div class="buyer-value">
+                @if($buyerBuilding->total_budget_min)
+                  ₹{{ number_format($buyerBuilding->total_budget_min) }}
+                  @if($buyerBuilding->total_budget_max && $buyerBuilding->total_budget_max != $buyerBuilding->total_budget_min)
+                    – ₹{{ number_format($buyerBuilding->total_budget_max) }}
+                  @endif
+                @else
+                  —
+                @endif
+              </div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Micro-locations</div>
+              <div class="buyer-value">
+                {{ $buyerBuilding->micro_locations ? implode(', ', $buyerBuilding->micro_locations) : '—' }}
+              </div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Distance Requirements</div>
+              <div class="buyer-value">
+                {{ $buyerBuilding->distance_requirement ?: '—' }}
+              </div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Rent Expectation</div>
+              <div class="buyer-value">
+                {{ $buyerBuilding->rent_expectation ? '₹' . number_format($buyerBuilding->rent_expectation) . ' / month' : '—' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> {{-- .buyer-card --}}
+
+      {{-- === EDIT BUILDING PREFERENCE MODAL (UNIQUE PER ROW) === --}}
+      <div id="edit-building-modal-{{ $buyerBuilding->id }}" class="buyer-modal-overlay" style="display:none;">
+        <div class="buyer-modal">
+          <div class="buyer-modal-header">
+            <h2>Edit Building Preference</h2>
+            <button type="button"
+                    class="buyer-modal-close"
+                    onclick="closeEditModal('building-{{ $buyerBuilding->id }}')">×</button>
+          </div>
+
+          <form method="POST"
+                action="{{ route('admin.buyers.preferences.building.update', $buyerBuilding) }}"
+                class="module-form">
+            @csrf
+            @method('PATCH')
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>District(s)</label>
+                <input type="text"
+                       name="districts"
+                       value="{{ old('districts', is_array($buyerBuilding->preferred_districts) ? implode(', ', $buyerBuilding->preferred_districts) : $buyerBuilding->preferred_districts) }}"
+                       placeholder="e.g., Ernakulam, Kottayam">
+              </div>
+              <div class="form-group">
+                <label>Type of Building</label>
+                <select name="building_type">
+                  @php
+                    $types = [
+                      'Commercial','Office','Retail','Apartment',
+                      'Villa','Mixed-Use','Hotel','Hospital','Warehouse'
+                    ];
+                  @endphp
+                  @foreach($types as $type)
+                    <option value="{{ $type }}"
+                            {{ ($buyerBuilding->building_type === $type) ? 'selected' : '' }}>
+                      {{ $type }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Built-up Area Min (sq.ft)</label>
+                <input type="number"
+                       name="area_min"
+                       value="{{ old('area_min', $buyerBuilding->area_min) }}"
+                       placeholder="Minimum area">
+              </div>
+              <div class="form-group">
+                <label>Built-up Area Max (sq.ft)</label>
+                <input type="number"
+                       name="area_max"
+                       value="{{ old('area_max', $buyerBuilding->area_max) }}"
+                       placeholder="Maximum area">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Frontage Requirement (ft)</label>
+                <input type="number"
+                       name="frontage_min"
+                       value="{{ old('frontage_min', $buyerBuilding->frontage_min) }}"
+                       placeholder="Enter frontage">
+              </div>
+              <div class="form-group">
+                <label>Age of Building Acceptable</label>
+                <select name="age_preference">
+                  @php
+                    $ageOptions = [
+                      'New (0-5 years)',
+                      'Recent (5-10 years)',
+                      'Moderate (10-20 years)',
+                      'Any age',
+                    ];
+                  @endphp
+                  @foreach($ageOptions as $opt)
+                    <option value="{{ $opt }}"
+                            {{ ($buyerBuilding->age_preference === $opt) ? 'selected' : '' }}>
+                      {{ $opt }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Total Budget (₹)</label>
+              <input type="number"
+                     name="total_budget"
+                     value="{{ old('total_budget', $buyerBuilding->total_budget_min) }}"
+                     placeholder="Enter total budget">
+            </div>
+
+            <div class="form-group">
+              <label>Micro-location Preferences</label>
+              <input type="text"
+                     name="micro_locations"
+                     value="{{ old('micro_locations', is_array($buyerBuilding->micro_locations) ? implode(', ', $buyerBuilding->micro_locations) : $buyerBuilding->micro_locations) }}"
+                     placeholder="Specific areas you prefer">
+            </div>
+
+            <div class="form-group">
+              <label>Distance Requirements</label>
+              <div class="checkbox-group">
+                <label>
+                  <input type="checkbox"
+                         name="distance_requirements[]"
+                         value="nearHighway"
+                         {{ in_array('nearHighway', $distanceReq) ? 'checked' : '' }}>
+                  Near NH/SH
+                </label>
+                <label>
+                  <input type="checkbox"
+                         name="distance_requirements[]"
+                         value="nearCityCentre"
+                         {{ in_array('nearCityCentre', $distanceReq) ? 'checked' : '' }}>
+                  Near City Centre
+                </label>
+                <label>
+                  <input type="checkbox"
+                         name="distance_requirements[]"
+                         value="nearHospital"
+                         {{ in_array('nearHospital', $distanceReq) ? 'checked' : '' }}>
+                  Near Hospital
+                </label>
+                <label>
+                  <input type="checkbox"
+                         name="distance_requirements[]"
+                         value="nearSchool"
+                         {{ in_array('nearSchool', $distanceReq) ? 'checked' : '' }}>
+                  Near School
+                </label>
+                <label>
+                  <input type="checkbox"
+                         name="distance_requirements[]"
+                         value="nearITPark"
+                         {{ in_array('nearITPark', $distanceReq) ? 'checked' : '' }}>
+                  Near IT Park
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Rent Expectation (if looking for rental asset)</label>
+              <input type="number"
+                     name="rent_expectation"
+                     value="{{ old('rent_expectation', $buyerBuilding->rent_expectation) }}"
+                     placeholder="Expected monthly rent">
+            </div>
+
+            <div class="buyer-modal-actions">
+              <button type="button"
+                      class="btn-secondary"
+                      onclick="closeEditModal('building-{{ $buyerBuilding->id }}')">
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div> {{-- #edit-building-modal-{{ $buyerBuilding->id }} --}}
+    @endforeach
   @else
     <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-      No building requirement saved yet. Fill the “Preferred Building” form above.
+      No building requirements added by you yet. Fill the “Preferred Building” form above.
     </p>
   @endif
 </div>
+
 
   {{-- INVESTMENT TAB --}}
 {{-- INVESTMENT TAB --}}
 <div id="buyer-investment-panel" class="buyer-tab-panel">
-  @if($buyerInvestment)
-    @php $invStatus = $buyerInvestment->status ?? 'active'; @endphp
+  @if($adminInvestmentPreferences->isNotEmpty())
+    @foreach($adminInvestmentPreferences as $buyerInvestment)
+      @php
+        $invStatus = $buyerInvestment->status ?? 'active';
+      @endphp
 
-    <div class="buyer-card">
-      <div class="buyer-card-header">
-        <div>
-          <div class="buyer-code">REQ-INV-{{ $buyerInvestment->id }}</div>
-          <span class="buyer-chip
-            {{ $invStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
-            {{ $invStatus === 'completed' ? 'buyer-chip-soft' : '' }}
-            {{ $invStatus === 'active' ? 'buyer-chip-primary' : '' }}
-          ">
-            {{ ucfirst($invStatus) }}
-          </span>
+      <div class="buyer-card">
+        <div class="buyer-card-header">
+          <div>
+            <div class="buyer-code">REQ-INV-{{ $buyerInvestment->id }}</div>
+
+            {{-- Show which buyer this belongs to --}}
+            @if($buyerInvestment->user)
+              <div style="font-size:12px; color:#6b7280;">
+                Buyer: {{ $buyerInvestment->user->name }} (ID: {{ $buyerInvestment->user->id }})
+              </div>
+            @endif
+
+            <span class="buyer-chip
+              {{ $invStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
+              {{ $invStatus === 'completed' ? 'buyer-chip-soft' : '' }}
+              {{ $invStatus === 'active' ? 'buyer-chip-primary' : '' }}
+            ">
+              {{ ucfirst($invStatus) }}
+            </span>
+          </div>
+
+          <div class="buyer-actions">
+            {{-- Mark Urgent --}}
+            @if($invStatus !== 'urgent')
+              <form method="POST"
+                    action="{{ route('admin.buyers.preferences.investment.status', $buyerInvestment) }}"
+                    style="display:inline;">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="status" value="urgent">
+                <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
+                  Mark Urgent
+                </button>
+              </form>
+            @endif
+
+            {{-- Mark Completed --}}
+            @if($invStatus !== 'completed')
+              <form method="POST"
+                    action="{{ route('admin.buyers.preferences.investment.status', $buyerInvestment) }}"
+                    style="display:inline;">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="status" value="completed">
+                <button type="submit" class="buyer-action-btn buyer-action-btn-success">
+                  Mark Completed
+                </button>
+              </form>
+            @endif
+          </div>
         </div>
 
-        <div class="buyer-actions">
-          {{-- OPEN EDIT MODAL --}}
-          <button type="button"
-                  class="buyer-action-btn"
-                  onclick="openEditModal('investment')">
-            Edit
-          </button>
-
-          {{-- Mark Urgent --}}
-          @if($invStatus !== 'urgent')
-            <form method="POST"
-                  action=""
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="urgent">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
-                Mark Urgent
-              </button>
-            </form>
-          @endif
-
-          {{-- Mark Completed --}}
-          @if($invStatus !== 'completed')
-            <form method="POST"
-                  action=""
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="completed">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-success">
-                Mark Completed
-              </button>
-            </form>
-          @endif
-        </div>
-      </div>
-
-      <div class="buyer-card-body">
-        <div class="buyer-grid">
-          <div>
-            <div class="buyer-label">Property Type</div>
-            <div class="buyer-value">{{ $buyerInvestment->investment_property_type ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Districts</div>
-            <div class="buyer-value">
-              {{ $buyerInvestment->preferred_districts ? implode(', ', $buyerInvestment->preferred_districts) : '—' }}
+        <div class="buyer-card-body">
+          <div class="buyer-grid">
+            <div>
+              <div class="buyer-label">Property Type</div>
+              <div class="buyer-value">
+                {{ $buyerInvestment->investment_property_type ?? '—' }}
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Locations</div>
-            <div class="buyer-value">
-              {{ $buyerInvestment->preferred_locations ? implode(', ', $buyerInvestment->preferred_locations) : '—' }}
+
+            <div>
+              <div class="buyer-label">Preferred Districts</div>
+              <div class="buyer-value">
+                {{ $buyerInvestment->preferred_districts ? implode(', ', $buyerInvestment->preferred_districts) : '—' }}
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="buyer-label">Budget Range</div>
-            <div class="buyer-value">
-              @if($buyerInvestment->investment_budget_min)
-                ₹{{ number_format($buyerInvestment->investment_budget_min) }}
-                @if($buyerInvestment->investment_budget_max && $buyerInvestment->investment_budget_max != $buyerInvestment->investment_budget_min)
-                  – ₹{{ number_format($buyerInvestment->investment_budget_max) }}
+
+            <div>
+              <div class="buyer-label">Preferred Locations</div>
+              <div class="buyer-value">
+                {{ $buyerInvestment->preferred_locations ? implode(', ', $buyerInvestment->preferred_locations) : '—' }}
+              </div>
+            </div>
+
+            <div>
+              <div class="buyer-label">Budget Range</div>
+              <div class="buyer-value">
+                @if($buyerInvestment->investment_budget_min)
+                  ₹{{ number_format($buyerInvestment->investment_budget_min) }}
+                  @if($buyerInvestment->investment_budget_max && $buyerInvestment->investment_budget_max != $buyerInvestment->investment_budget_min)
+                    – ₹{{ number_format($buyerInvestment->investment_budget_max) }}
+                  @endif
+                @else
+                  —
                 @endif
-              @else
-                —
-              @endif
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="buyer-label">Profit Expectation / year</div>
-            <div class="buyer-value">
-              {{ $buyerInvestment->profit_expectation_year ? $buyerInvestment->profit_expectation_year . '%' : '—' }}
+
+            <div>
+              <div class="buyer-label">Profit Expectation / year</div>
+              <div class="buyer-value">
+                @if($buyerInvestment->profit_expectation_year)
+                  {{ rtrim(rtrim(number_format($buyerInvestment->profit_expectation_year, 2), '0'), '.') }}%
+                @else
+                  —
+                @endif
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    @endforeach
 
-    {{-- EDIT INVESTMENT PREFERENCE MODAL --}}
-    <div id="edit-investment-modal" class="buyer-modal-overlay" style="display:none;">
-      <div class="buyer-modal">
-        <div class="buyer-modal-header">
-          <h2>Edit Investment Preference</h2>
-          <button type="button"
-                  class="buyer-modal-close"
-                  onclick="closeEditModal('investment')">
-            ×
-          </button>
-        </div>
-
-        <form method="POST"
-              action=""
-              class="module-form">
-          @csrf
-          @method('PATCH')
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Preferred District(s)</label>
-              <input type="text"
-                     name="districts"
-                     value="{{ old('districts',
-                        is_array($buyerInvestment->preferred_districts)
-                          ? implode(', ', $buyerInvestment->preferred_districts)
-                          : $buyerInvestment->preferred_districts
-                     ) }}"
-                     placeholder="e.g., Ernakulam, Kottayam">
-            </div>
-            <div class="form-group">
-              <label>Preferred Location(s)</label>
-              <input type="text"
-                     name="locations"
-                     value="{{ old('locations',
-                        is_array($buyerInvestment->preferred_locations)
-                          ? implode(', ', $buyerInvestment->preferred_locations)
-                          : $buyerInvestment->preferred_locations
-                     ) }}"
-                     placeholder="e.g., Kakkanad, Vyttila">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Property Type</label>
-            <select name="investment_property_type">
-              @php
-                $types = ['Land', 'Rental Buildings', 'Villas', 'Flats', 'Hospital', 'Any'];
-                $currentType = old('investment_property_type', $buyerInvestment->investment_property_type);
-              @endphp
-              @foreach($types as $type)
-                <option value="{{ $type }}" {{ $currentType === $type ? 'selected' : '' }}>
-                  {{ $type }}
-                </option>
-              @endforeach
-            </select>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Budget Range (₹)</label>
-              <input type="number"
-                     name="budget_range"
-                     value="{{ old('budget_range', $buyerInvestment->investment_budget_min) }}"
-                     placeholder="Total budget">
-            </div>
-            <div class="form-group">
-              <label>Profit Expectation per Year (%)</label>
-              <input type="number"
-                     name="profit_expectation_year"
-                     value="{{ old('profit_expectation_year', $buyerInvestment->profit_expectation_year) }}"
-                     min="0"
-                     max="100"
-                     placeholder="e.g., 15">
-            </div>
-          </div>
-
-          <div class="buyer-modal-actions">
-            <button type="button"
-                    class="btn-secondary"
-                    onclick="closeEditModal('investment')">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   @else
     <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-      No investment requirement saved yet. Fill the “Preferred Investment” form above.
+      No investment requirements added by you yet.
     </p>
   @endif
 </div>
+
 
 </div>
 

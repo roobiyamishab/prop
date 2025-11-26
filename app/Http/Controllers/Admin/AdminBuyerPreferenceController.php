@@ -82,10 +82,10 @@ class AdminBuyerPreferenceController extends Controller
 }
 
     /* -------------------- BUILDING: STORE (ADMIN) -------------------- */
-   public function storeBuilding(Request $request)
+  public function storeBuilding(Request $request)
 {
     $data = $request->validate([
-        'user_id'                => 'required|exists:users,id',    // ⬅️ important
+        'user_id'                => 'required|exists:users,id',
         'districts'              => 'nullable|string',
         'building_type'          => 'nullable|string',
         'area_min'               => 'nullable|integer',
@@ -102,36 +102,35 @@ class AdminBuyerPreferenceController extends Controller
     $adminId = Auth::guard('admin')->id();
     $userId  = $data['user_id'];
 
-    BuyerBuildingPreference::updateOrCreate(
-        ['user_id' => $userId],
-        [
-            'status'              => 'active',
-            'created_by_admin_id' => $adminId,
+    $building = new BuyerBuildingPreference();
+    $building->user_id            = $userId;
+    $building->status             = 'active';
+    $building->created_by_admin_id= $adminId;
 
-            'preferred_districts' => !empty($data['districts'])
-                ? array_map('trim', explode(',', $data['districts']))
-                : null,
+    $building->preferred_districts = !empty($data['districts'])
+        ? array_map('trim', explode(',', $data['districts']))
+        : null;
 
-            'building_type'       => $data['building_type'] ?? null,
-            'area_min'            => $data['area_min'] ?? null,
-            'area_max'            => $data['area_max'] ?? null,
-            'frontage_min'        => $data['frontage_min'] ?? null,
-            'age_preference'      => $data['age_preference'] ?? null,
+    $building->building_type  = $data['building_type'] ?? null;
+    $building->area_min       = $data['area_min'] ?? null;
+    $building->area_max       = $data['area_max'] ?? null;
+    $building->frontage_min   = $data['frontage_min'] ?? null;
+    $building->age_preference = $data['age_preference'] ?? null;
 
-            'total_budget_min'    => $data['total_budget'] ?? null,
-            'total_budget_max'    => $data['total_budget'] ?? null,
+    $building->total_budget_min = $data['total_budget'] ?? null;
+    $building->total_budget_max = $data['total_budget'] ?? null;
 
-            'micro_locations'     => !empty($data['micro_locations'])
-                ? array_map('trim', explode(',', $data['micro_locations']))
-                : null,
+    $building->micro_locations = !empty($data['micro_locations'])
+        ? array_map('trim', explode(',', $data['micro_locations']))
+        : null;
 
-            'distance_requirement'=> !empty($data['distance_requirements'])
-                ? implode(',', $data['distance_requirements'])
-                : null,
+    $building->distance_requirement = !empty($data['distance_requirements'])
+        ? implode(',', $data['distance_requirements'])
+        : null;
 
-            'rent_expectation'    => $data['rent_expectation'] ?? null,
-        ]
-    );
+    $building->rent_expectation = $data['rent_expectation'] ?? null;
+
+    $building->save();
 
     $user = User::find($userId);
 
@@ -141,8 +140,9 @@ class AdminBuyerPreferenceController extends Controller
     );
 }
 
+
     /* -------------------- INVESTMENT: STORE (ADMIN) -------------------- */
-  public function storeInvestment(Request $request)
+ public function storeInvestment(Request $request)
 {
     $data = $request->validate([
         'user_id'                 => 'required|exists:users,id',
@@ -156,28 +156,26 @@ class AdminBuyerPreferenceController extends Controller
     $adminId = Auth::guard('admin')->id();
     $userId  = $data['user_id'];
 
-    BuyerInvestmentPreference::updateOrCreate(
-        ['user_id' => $userId],
-        [
-            'status'                   => 'active',
+    $investment = new BuyerInvestmentPreference();
 
-            // if your table has this column:
-            'created_by_admin_id'      => $adminId,
+    $investment->user_id            = $userId;
+    $investment->status             = 'active';
+    $investment->created_by_admin_id= $adminId;   // works if column exists
 
-            'preferred_districts'      => !empty($data['districts'])
-                ? array_map('trim', explode(',', $data['districts']))
-                : null,
+    $investment->preferred_districts = !empty($data['districts'])
+        ? array_map('trim', explode(',', $data['districts']))
+        : null;
 
-            'preferred_locations'      => !empty($data['locations'])
-                ? array_map('trim', explode(',', $data['locations']))
-                : null,
+    $investment->preferred_locations = !empty($data['locations'])
+        ? array_map('trim', explode(',', $data['locations']))
+        : null;
 
-            'investment_property_type' => $data['investment_property_type'] ?? null,
-            'investment_budget_min'    => $data['budget_range'] ?? null,
-            'investment_budget_max'    => $data['budget_range'] ?? null,
-            'profit_expectation_year'  => $data['profit_expectation_year'] ?? null,
-        ]
-    );
+    $investment->investment_property_type = $data['investment_property_type'] ?? null;
+    $investment->investment_budget_min    = $data['budget_range'] ?? null;
+    $investment->investment_budget_max    = $data['budget_range'] ?? null;
+    $investment->profit_expectation_year  = $data['profit_expectation_year'] ?? null;
+
+    $investment->save();
 
     $user = User::find($userId);
 
