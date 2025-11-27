@@ -3,9 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\AdminUserController;          // ⬅ added
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminBuyerPreferenceController;
 use App\Http\Controllers\Admin\AdminSellerListingController;
+use App\Http\Controllers\Admin\BuyerPropertyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,21 +44,26 @@ Route::middleware('auth:admin')
         // ----------------------------------------------------
         // 🔹 BASIC USER PROFILE UPDATE (ADMIN SIDE)
         // ----------------------------------------------------
-Route::post('/users/{user}/profile-basic', [AdminUserController::class, 'updateBasicProfile'])
-    ->name('users.profile.basic.update');
+        Route::post('/users/{user}/profile-basic', [AdminUserController::class, 'updateBasicProfile'])
+            ->name('users.profile.basic.update');
+
+        // ----------------------------------------------------
+        // 🔹 BUYER PROPERTIES OVERVIEW (ALL PROPERTIES PAGE)
+        // ----------------------------------------------------
+        Route::get('/buyers/{buyer}/properties', [BuyerPropertyController::class, 'index'])
+            ->name('buyer.properties.index');  // => admin.buyer.properties.index
 
         // ----------------------------------------------------
         // SUPER ADMIN – BUYER PREFERENCES (LAND / BUILDING / INVESTMENT)
         // ----------------------------------------------------
 
         // (1) Create/store preferences for a specific user
-       Route::prefix('buyers/preferences')
-    ->name('buyer.preferences.')
-    ->group(function () {
+        Route::prefix('buyers/preferences')
+            ->name('buyer.preferences.')
+            ->group(function () {
 
-        Route::post('/land', [AdminBuyerPreferenceController::class, 'storeLand'])
-            ->name('land.store');   // => admin.buyer.preferences.land.store
-    
+                Route::post('/land', [AdminBuyerPreferenceController::class, 'storeLand'])
+                    ->name('land.store');   // => admin.buyer.preferences.land.store
 
                 Route::post('/building', [AdminBuyerPreferenceController::class, 'storeBuilding'])
                     ->name('building.store');
@@ -66,11 +72,12 @@ Route::post('/users/{user}/profile-basic', [AdminUserController::class, 'updateB
                     ->name('investment.store');
             });
 
-        // (2) Status change + full update by model ID
+        // (2) Status change + full update + DETAILED VIEW + DELETE by model ID
         Route::prefix('buyer/preferences')
             ->name('buyers.preferences.')
             ->group(function () {
 
+                // 🔹 Status update routes
                 Route::patch('/land/{land}/status', [AdminBuyerPreferenceController::class, 'updateLandStatus'])
                     ->name('land.status');
 
@@ -80,6 +87,7 @@ Route::post('/users/{user}/profile-basic', [AdminUserController::class, 'updateB
                 Route::patch('/investment/{investment}/status', [AdminBuyerPreferenceController::class, 'updateInvestmentStatus'])
                     ->name('investment.status');
 
+                // 🔹 Full update routes
                 Route::patch('/land/{land}', [AdminBuyerPreferenceController::class, 'updateLand'])
                     ->name('land.update');
 
@@ -88,6 +96,26 @@ Route::post('/users/{user}/profile-basic', [AdminUserController::class, 'updateB
 
                 Route::patch('/investment/{investment}', [AdminBuyerPreferenceController::class, 'updateInvestment'])
                     ->name('investment.update');
+
+                // 🔹 DELETE routes (NEW)
+                Route::delete('/land/{land}', [AdminBuyerPreferenceController::class, 'destroyLand'])
+                    ->name('land.destroy');
+
+                Route::delete('/building/{building}', [AdminBuyerPreferenceController::class, 'destroyBuilding'])
+                    ->name('building.destroy');
+
+                Route::delete('/investment/{investment}', [AdminBuyerPreferenceController::class, 'destroyInvestment'])
+                    ->name('investment.destroy');
+
+                // 🔹 Detailed View routes
+                Route::get('/land/{land}', [AdminBuyerPreferenceController::class, 'showLand'])
+                    ->name('land.show');        // admin.buyers.preferences.land.show
+
+                Route::get('/building/{building}', [AdminBuyerPreferenceController::class, 'showBuilding'])
+                    ->name('building.show');    // admin.buyers.preferences.building.show
+
+                Route::get('/investment/{investment}', [AdminBuyerPreferenceController::class, 'showInvestment'])
+                    ->name('investment.show');  // admin.buyers.preferences.investment.show
             });
 
         // ----------------------------------------------------

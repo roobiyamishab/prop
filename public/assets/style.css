@@ -1927,3 +1927,376 @@ input, select, textarea {
   gap: 8px;
   margin-top: 0;
 }
+/* Wrapper for the buttons row on the right */
+.buyer-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Base button (used by all three: Edit / Mark Urgent / Mark Completed) */
+.buyer-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #111827;
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.08s ease;
+}
+
+/* Hover / active for plain Edit button */
+.buyer-action-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.16);
+  transform: translateY(-1px);
+}
+
+.buyer-action-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* ===== VARIANTS ===== */
+
+/* Mark Urgent → orange pill */
+.buyer-action-btn-warning {
+  background-color: #f97316;    /* orange-500 */
+  border-color: #f97316;
+  color: #ffffff;
+}
+
+.buyer-action-btn-warning:hover {
+  background-color: #ea580c;    /* orange-600 */
+  border-color: #ea580c;
+}
+
+/* Mark Completed → green pill */
+.buyer-action-btn-success {
+  background-color: #16a34a;    /* green-600 */
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.buyer-action-btn-success:hover {
+  background-color: #15803d;    /* green-700 */
+  border-color: #15803d;
+}
+/* === Responsive table wrapper === */
+.buyer-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.buyer-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px; /* allows horizontal scroll on mobile */
+  font-size: 13px;
+}
+
+.buyer-table thead {
+  background-color: #f3f4f6;
+}
+
+.buyer-table th,
+.buyer-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.buyer-table th {
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.buyer-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.buyer-table tbody tr:hover {
+  background-color: #eff6ff;
+}
+
+/* Optional: smaller buttons inside tables */
+.buyer-table .buyer-action-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+/* Main content wrapper on pages that extend admin.layouts.app */
+.dashboard-main {
+  flex: 1;
+  padding: 24px;
+  background: #f3f4f6;
+  overflow-y: auto;
+}
+
+/* Our custom wrapper for individual pages */
+.dashboard-screen {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Tabs styling (likely already similar in your theme) */
+.buyer-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.buyer-tab {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.buyer-tab-active {
+  background-color: #111827;
+  color: #f9fafb;
+  border-color: #111827;
+}
+/* Make the main content area a bit wider */
+.dashboard-main {
+  flex: 1;
+  padding: 20px 24px;
+  background: #f3f4f6;
+  overflow-y: auto;
+}
+
+/* Wider screen wrapper for this page */
+.dashboard-screen {
+  max-width: 1300px;   /* was 1100 earlier; you can go 1400 if you like */
+  margin: 0 auto;
+}
+
+/* Base table styling (unchanged or tweak if you like) */
+.buyer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.buyer-table thead {
+  background: #f3f4f6;
+}
+
+.buyer-table th,
+.buyer-table td {
+  padding: 10px 12px; /* slightly more padding for laptop view */
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.buyer-table th {
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+}
+
+.buyer-table tr:last-child td {
+  border-bottom: none;
+}
+
+.buyer-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Table action buttons */
+.table-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-table {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-table-view {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.btn-table-edit {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+.btn-table-view:hover {
+  background-color: #d1d5db;
+}
+
+.btn-table-edit:hover {
+  background-color: #0b1120;
+}
+
+/* 🔹 Mobile responsive behaviour */
+@media (max-width: 768px) {
+  .buyer-table.responsive-table,
+  .buyer-table.responsive-table thead,
+  .buyer-table.responsive-table tbody,
+  .buyer-table.responsive-table th,
+  .buyer-table.responsive-table td,
+  .buyer-table.responsive-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .buyer-table.responsive-table thead {
+    display: none;
+  }
+
+  .buyer-table.responsive-table tr {
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #ffffff;
+  }
+
+  .buyer-table.responsive-table td {
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    position: relative;
+    padding-left: 110px;
+    white-space: normal;
+  }
+
+  .buyer-table.responsive-table td:last-child {
+    border-bottom: none;
+  }
+
+  .buyer-table.responsive-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 12px;
+  }
+
+  .table-actions {
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+}
+.detail-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e5e7eb;
+  font-size: 14px;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.detail-value {
+  color: #111827;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .detail-value {
+    text-align: left;
+    max-width: 100%;
+  }
+}
+/* Make the whole card behave like a table */
+.detail-card,
+.detail-table {
+  display: table;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+
+/* Each row = table row */
+.detail-row {
+  display: table-row;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+/* Label + value = table cells */
+.detail-label,
+.detail-value {
+  display: table-cell;
+  padding: 10px 16px;
+  vertical-align: top;
+}
+
+/* Left column: fixed-ish width */
+.detail-label {
+  width: 260px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* Right column: wide, normal text */
+.detail-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  max-width: none;     /* override any previous max-width */
+}

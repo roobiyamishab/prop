@@ -455,4 +455,17 @@ document.addEventListener('click', function (e) {
       }
     });
   })();
+   function openEditModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'flex'; // or 'block', depending on your CSS
+    }
+  }
+
+  function closeEditModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'none';
+    }
+  }
 

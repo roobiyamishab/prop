@@ -392,6 +392,15 @@
                 </form>
               </div>
             </div>
+       {{-- ALL PROPERTIES LINK CARD --}}
+<div class="accordion-card accordion-link-card">
+  <a href="{{ route('admin.buyer.properties.index', ['buyer' => $user->id]) }}"
+     class="accordion-header accordion-link">
+    <h3>All properties</h3>
+    <span class="accordion-icon">↗</span>
+  </a>
+</div>
+
     <!-- ====== BUYING REQUIREMENTS (Light theme cards) ====== -->
        <!-- ====== BUYING REQUIREMENTS (Dynamic) ====== -->
     <div class="buyer-req-summary">
@@ -421,7 +430,6 @@
               REQ-LAND-{{ $buyerLand->id }}
             </div>
 
-            {{-- Optional: show which buyer it belongs to --}}
             @if($buyerLand->user)
               <div style="font-size:12px; color:#6b7280;">
                 Buyer: {{ $buyerLand->user->name }} (ID: {{ $buyerLand->user->id }})
@@ -439,10 +447,10 @@
 
           {{-- ACTION BUTTONS --}}
           <div class="buyer-actions">
-            {{-- EDIT BUTTON – you can still open modal, but IDs must be unique --}}
+            {{-- EDIT opens THIS card's modal --}}
             <button type="button"
                     class="buyer-action-btn"
-                    onclick="openEditModal('land-{{ $buyerLand->id }}')">
+                    onclick="openEditModal('edit-land-modal-{{ $buyerLand->id }}')">
               Edit
             </button>
 
@@ -534,7 +542,7 @@
                 @if($buyerLand->amenities_preference && count($buyerLand->amenities_preference))
                   {{ implode(', ', $buyerLand->amenities_preference) }}
                 @else
-                  —
+                  — 
                 @endif
               </div>
             </div>
@@ -542,7 +550,126 @@
         </div>
       </div>
 
-      {{-- You can also duplicate the EDIT MODAL per record with unique id (land-{{ $buyerLand->id }}) if needed --}}
+      {{-- MODAL FOR THIS LAND PREFERENCE --}}
+      <div id="edit-land-modal-{{ $buyerLand->id }}" class="buyer-modal-overlay" style="display:none;">
+        <div class="buyer-modal">
+          <div class="buyer-modal-header">
+            <h2>Edit Land Preference</h2>
+            <button type="button"
+                    class="buyer-modal-close"
+                    onclick="closeEditModal('edit-land-modal-{{ $buyerLand->id }}')">×</button>
+          </div>
+
+          <form method="POST"
+                action="{{ route('admin.buyers.preferences.land.update', $buyerLand->id) }}"
+                class="module-form">
+            @csrf
+            @method('PATCH')
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Preferred District(s)</label>
+                <input type="text"
+                       name="districts"
+                       value="{{ old('districts', is_array($buyerLand->preferred_districts) ? implode(', ', $buyerLand->preferred_districts) : $buyerLand->preferred_districts) }}"
+                       placeholder="e.g., Ernakulam, Kottayam">
+              </div>
+              <div class="form-group">
+                <label>Preferred Location(s)</label>
+                <input type="text"
+                       name="locations"
+                       value="{{ old('locations', is_array($buyerLand->preferred_locations) ? implode(', ', $buyerLand->preferred_locations) : $buyerLand->preferred_locations) }}"
+                       placeholder="e.g., Kakkanad, Edapally">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Land Size Unit</label>
+                <select name="land_size_unit">
+                  <option value="cent" {{ $buyerLand->land_size_unit === 'cent' ? 'selected' : '' }}>Cent</option>
+                  <option value="acre" {{ $buyerLand->land_size_unit === 'acre' ? 'selected' : '' }}>Acre</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Budget Capacity / cent (₹)</label>
+                <input type="number"
+                       name="budget_per_cent"
+                       value="{{ old('budget_per_cent', $buyerLand->budget_per_cent_min) }}"
+                       placeholder="Enter amount">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Zoning Preference</label>
+                <select name="zoning_preference">
+                  <option value="Residential" {{ $buyerLand->zoning_preference === 'Residential' ? 'selected' : '' }}>Residential</option>
+                  <option value="Commercial" {{ $buyerLand->zoning_preference === 'Commercial' ? 'selected' : '' }}>Commercial</option>
+                  <option value="Agricultural" {{ $buyerLand->zoning_preference === 'Agricultural' ? 'selected' : '' }}>Agricultural</option>
+                  <option value="Industrial" {{ $buyerLand->zoning_preference === 'Industrial' ? 'selected' : '' }}>Industrial</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Timeline to Purchase</label>
+                <select name="timeline_to_purchase">
+                  <option value="Immediate" {{ $buyerLand->timeline_to_purchase === 'Immediate' ? 'selected' : '' }}>Immediate</option>
+                  <option value="Within 3 months" {{ $buyerLand->timeline_to_purchase === 'Within 3 months' ? 'selected' : '' }}>Within 3 months</option>
+                  <option value="Within 6 months" {{ $buyerLand->timeline_to_purchase === 'Within 6 months' ? 'selected' : '' }}>Within 6 months</option>
+                  <option value="Within 1 year" {{ $buyerLand->timeline_to_purchase === 'Within 1 year' ? 'selected' : '' }}>Within 1 year</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Mode of Purchase</label>
+                <select name="mode_of_purchase">
+                  <option value="Cash" {{ $buyerLand->mode_of_purchase === 'Cash' ? 'selected' : '' }}>Cash</option>
+                  <option value="Loan" {{ $buyerLand->mode_of_purchase === 'Loan' ? 'selected' : '' }}>Loan</option>
+                  <option value="Mixed" {{ $buyerLand->mode_of_purchase === 'Mixed' ? 'selected' : '' }}>Mixed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Typical Advance Capacity (%)</label>
+                <input type="number"
+                       name="advance_capacity"
+                       value="{{ old('advance_capacity', $buyerLand->advance_capacity) }}"
+                       min="0" max="100">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Amenities Preference</label>
+              @php $amenities = $buyerLand->amenities_preference ?? []; @endphp
+              <div class="checkbox-group">
+                <label><input type="checkbox" name="amenities[]" value="roadAccess" {{ in_array('roadAccess', $amenities) ? 'checked' : '' }}> Road Access</label>
+                <label><input type="checkbox" name="amenities[]" value="electricity" {{ in_array('electricity', $amenities) ? 'checked' : '' }}> Electricity</label>
+                <label><input type="checkbox" name="amenities[]" value="waterSupply" {{ in_array('waterSupply', $amenities) ? 'checked' : '' }}> Water Supply</label>
+                <label><input type="checkbox" name="amenities[]" value="drainage" {{ in_array('drainage', $amenities) ? 'checked' : '' }}> Drainage</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Infrastructure Preference</label>
+              <textarea name="infrastructure"
+                        rows="3"
+                        placeholder="Describe your infrastructure requirements...">{{ old('infrastructure', $buyerLand->infrastructure_preference) }}</textarea>
+            </div>
+
+            <div class="buyer-modal-actions">
+              <button type="button"
+                      class="btn-secondary"
+                      onclick="closeEditModal('edit-land-modal-{{ $buyerLand->id }}')">
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     @endforeach
 
   @else
@@ -551,6 +678,7 @@
     </p>
   @endif
 </div>
+
 
 
 
@@ -589,10 +717,10 @@
           </div>
 
           <div class="buyer-actions">
-            {{-- EDIT → open modal (unique per row) --}}
+            {{-- EDIT → open THIS row's modal (ID must match below) --}}
             <button type="button"
                     class="buyer-action-btn"
-                    onclick="openEditModal('building-{{ $buyerBuilding->id }}')">
+                    onclick="openEditModal('edit-building-modal-{{ $buyerBuilding->id }}')">
               Edit
             </button>
 
@@ -697,7 +825,7 @@
             <h2>Edit Building Preference</h2>
             <button type="button"
                     class="buyer-modal-close"
-                    onclick="closeEditModal('building-{{ $buyerBuilding->id }}')">×</button>
+                    onclick="closeEditModal('edit-building-modal-{{ $buyerBuilding->id }}')">×</button>
           </div>
 
           <form method="POST"
@@ -847,7 +975,7 @@
             <div class="buyer-modal-actions">
               <button type="button"
                       class="btn-secondary"
-                      onclick="closeEditModal('building-{{ $buyerBuilding->id }}')">
+                      onclick="closeEditModal('edit-building-modal-{{ $buyerBuilding->id }}')">
                 Cancel
               </button>
               <button type="submit" class="btn-primary">
@@ -864,6 +992,7 @@
     </p>
   @endif
 </div>
+
 
 
   {{-- INVESTMENT TAB --}}
@@ -897,6 +1026,13 @@
           </div>
 
           <div class="buyer-actions">
+            {{-- EDIT → open THIS investment’s modal --}}
+            <button type="button"
+                    class="buyer-action-btn"
+                    onclick="openEditModal('edit-investment-modal-{{ $buyerInvestment->id }}')">
+              Edit
+            </button>
+
             {{-- Mark Urgent --}}
             @if($invStatus !== 'urgent')
               <form method="POST"
@@ -976,7 +1112,107 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> {{-- .buyer-card --}}
+
+      {{-- ===== EDIT INVESTMENT PREFERENCE MODAL (UNIQUE PER ROW) ===== --}}
+      <div id="edit-investment-modal-{{ $buyerInvestment->id }}" class="buyer-modal-overlay" style="display:none;">
+        <div class="buyer-modal">
+          <div class="buyer-modal-header">
+            <h2>Edit Investment Preference</h2>
+            <button type="button"
+                    class="buyer-modal-close"
+                    onclick="closeEditModal('edit-investment-modal-{{ $buyerInvestment->id }}')">×</button>
+          </div>
+
+          <form method="POST"
+                action="{{ route('admin.buyers.preferences.investment.update', $buyerInvestment) }}"
+                class="module-form">
+            @csrf
+            @method('PATCH')
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Preferred District(s)</label>
+                <input type="text"
+                       name="districts"
+                       value="{{ old('districts', is_array($buyerInvestment->preferred_districts) ? implode(', ', $buyerInvestment->preferred_districts) : $buyerInvestment->preferred_districts) }}"
+                       placeholder="e.g., Ernakulam, Kottayam">
+              </div>
+              <div class="form-group">
+                <label>Preferred Location(s)</label>
+                <input type="text"
+                       name="locations"
+                       value="{{ old('locations', is_array($buyerInvestment->preferred_locations) ? implode(', ', $buyerInvestment->preferred_locations) : $buyerInvestment->preferred_locations) }}"
+                       placeholder="e.g., Kakkanad, Edapally">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Investment Property Type</label>
+                @php
+                  $invTypes = [
+                    'Land',
+                    'Commercial Building',
+                    'Residential Building',
+                    'Mixed-Use Asset',
+                    'Retail Asset',
+                    'Warehouse / Industrial',
+                    'Hospitality (Hotel/Resort)',
+                    'Any Profitable Asset',
+                  ];
+                @endphp
+                <select name="investment_property_type">
+                  <option value="">Select type</option>
+                  @foreach($invTypes as $type)
+                    <option value="{{ $type }}"
+                            {{ $buyerInvestment->investment_property_type === $type ? 'selected' : '' }}>
+                      {{ $type }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Investment Budget Min (₹)</label>
+                <input type="number"
+                       name="investment_budget_min"
+                       value="{{ old('investment_budget_min', $buyerInvestment->investment_budget_min) }}"
+                       placeholder="Minimum budget">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Investment Budget Max (₹)</label>
+                <input type="number"
+                       name="investment_budget_max"
+                       value="{{ old('investment_budget_max', $buyerInvestment->investment_budget_max) }}"
+                       placeholder="Maximum budget (optional)">
+              </div>
+              <div class="form-group">
+                <label>Profit Expectation per Year (%)</label>
+                <input type="number"
+                       step="0.01"
+                       name="profit_expectation_year"
+                       value="{{ old('profit_expectation_year', $buyerInvestment->profit_expectation_year) }}"
+                       placeholder="e.g., 8, 10, 12">
+              </div>
+            </div>
+
+            <div class="buyer-modal-actions">
+              <button type="button"
+                      class="btn-secondary"
+                      onclick="closeEditModal('edit-investment-modal-{{ $buyerInvestment->id }}')">
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div> {{-- #edit-investment-modal-{{ $buyerInvestment->id }} --}}
     @endforeach
 
   @else
@@ -985,6 +1221,7 @@
     </p>
   @endif
 </div>
+
 
 
 </div>
