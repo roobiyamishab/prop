@@ -19,9 +19,12 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
+            // NEW FIELD — admin creator (nullable)
+            $table->unsignedBigInteger('created_by_admin_id')->nullable();
+
             $table->string('property_code', 20)->unique(); // LND100, LND101, etc.
 
-            // Status: normal / hot / urgent / sold / booked / off_market
+            // Status
             $table->enum('status', ['normal', 'hot', 'urgent', 'sold', 'booked', 'off_market'])
                   ->default('normal');
 
@@ -42,36 +45,36 @@ return new class extends Migration
             $table->string('plot_shape', 100)->nullable(); // square / rectangle / irregular
 
             // Zoning & legal
-            $table->string('zoning_type', 120)->nullable(); // residential, commercial, etc.
-            $table->string('ownership_type', 100)->nullable(); // individual, joint, company, POA
-            $table->text('restrictions')->nullable(); // CRZ, wetland, hill tract etc.
+            $table->string('zoning_type', 120)->nullable();
+            $table->string('ownership_type', 100)->nullable();
+            $table->text('restrictions')->nullable();
 
             // Pricing
             $table->decimal('expected_price_per_cent', 14, 2)->nullable();
-            $table->string('negotiability', 50)->nullable();   // Negotiable / Slightly / Fixed
+            $table->string('negotiability', 50)->nullable();
             $table->integer('expected_advance_pct')->nullable();
             $table->decimal('min_offer_expected', 14, 2)->nullable();
-            $table->text('market_value_info')->nullable();     // recent deals / market value
+            $table->text('market_value_info')->nullable();
 
             // Condition
-            $table->string('land_type', 100)->nullable();  // plain land / slope / filled
-            $table->string('current_use', 100)->nullable(); // vacant / agricultural / parking
+            $table->string('land_type', 100)->nullable();
+            $table->string('current_use', 100)->nullable();
             $table->boolean('electricity')->default(false);
             $table->boolean('water')->default(false);
             $table->boolean('drainage')->default(false);
             $table->boolean('compound_wall')->default(false);
 
             // Sale timeline
-            $table->string('sale_timeline', 100)->nullable();  // Immediate / 1 month / 3 months
+            $table->string('sale_timeline', 100)->nullable();
 
             // Media & docs
             $table->json('photos')->nullable();
             $table->json('videos')->nullable();
-            $table->json('documents')->nullable(); // tax receipt, sketch, etc.
+            $table->json('documents')->nullable();
 
             $table->timestamps();
 
-            // Indexes for faster matching
+            // Indexes
             $table->index(['district', 'zoning_type']);
         });
     }

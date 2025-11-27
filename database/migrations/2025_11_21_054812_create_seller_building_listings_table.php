@@ -19,6 +19,9 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
+            // 🔹 Admin who created the listing (nullable)
+            $table->unsignedBigInteger('created_by_admin_id')->nullable();
+
             $table->string('property_code', 20)->unique(); // BLD100, HOS100, HTL100, etc.
 
             // Status: normal / hot / urgent / sold / booked / off_market

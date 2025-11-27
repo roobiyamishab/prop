@@ -58,6 +58,10 @@
                     <th>Mode</th>
                     <th>Advance %</th>
                     <th>Status</th>
+                    {{-- NEW: buyer info --}}
+                    <th>Buyer Name</th>
+                    <th>Buyer Phone</th>
+                    <th>Buyer Location</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -78,7 +82,7 @@
                             – ₹{{ number_format($land->budget_per_cent_max) }}
                           @endif
                         @else
-                          —
+                          — 
                         @endif
                       </td>
                       <td data-label="Zoning">{{ $land->zoning_preference ?? '—' }}</td>
@@ -86,6 +90,12 @@
                       <td data-label="Mode">{{ $land->mode_of_purchase ?? '—' }}</td>
                       <td data-label="Advance %">{{ $land->advance_capacity ? $land->advance_capacity . '%' : '—' }}</td>
                       <td data-label="Status">{{ ucfirst($land->status ?? 'active') }}</td>
+
+                      {{-- NEW: buyer info (same for all rows) --}}
+                      <td data-label="Buyer Name">{{ $buyer->name }}</td>
+                      <td data-label="Buyer Phone">{{ $buyer->phone ?? '—' }}</td>
+                      <td data-label="Buyer Location">{{ $buyer->location ?? '—' }}</td>
+
                       <td data-label="Actions">
                         <div class="table-actions">
                           <a href="{{ route('admin.buyers.preferences.land.show', $land) }}" class="btn-table btn-table-view">
@@ -120,6 +130,10 @@
                     <th>Total Budget</th>
                     <th>Rent Expectation</th>
                     <th>Status</th>
+                    {{-- NEW: buyer info --}}
+                    <th>Buyer Name</th>
+                    <th>Buyer Phone</th>
+                    <th>Buyer Location</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -142,13 +156,19 @@
                             – ₹{{ number_format($bld->total_budget_max) }}
                           @endif
                         @else
-                          —
+                          — 
                         @endif
                       </td>
                       <td data-label="Rent Expectation">
                         {{ $bld->rent_expectation ? '₹' . number_format($bld->rent_expectation) . '/month' : '—' }}
                       </td>
                       <td data-label="Status">{{ ucfirst($bld->status ?? 'active') }}</td>
+
+                      {{-- NEW: buyer info --}}
+                      <td data-label="Buyer Name">{{ $buyer->name }}</td>
+                      <td data-label="Buyer Phone">{{ $buyer->phone ?? '—' }}</td>
+                      <td data-label="Buyer Location">{{ $buyer->location ?? '—' }}</td>
+
                       <td data-label="Actions">
                         <div class="table-actions">
                           <a href="{{ route('admin.buyers.preferences.building.show', $bld) }}" class="btn-table btn-table-view">
@@ -182,6 +202,10 @@
                     <th>Budget Range</th>
                     <th>Profit Expectation / Year</th>
                     <th>Status</th>
+                    {{-- NEW: buyer info --}}
+                    <th>Buyer Name</th>
+                    <th>Buyer Phone</th>
+                    <th>Buyer Location</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -203,17 +227,23 @@
                             – ₹{{ number_format($inv->investment_budget_max) }}
                           @endif
                         @else
-                          —
+                          — 
                         @endif
                       </td>
                       <td data-label="Profit Expectation / Year">
                         @if($inv->profit_expectation_year)
                           {{ rtrim(rtrim(number_format($inv->profit_expectation_year, 2), '0'), '.') }}%
                         @else
-                          —
+                          — 
                         @endif
                       </td>
                       <td data-label="Status">{{ ucfirst($inv->status ?? 'active') }}</td>
+
+                      {{-- NEW: buyer info --}}
+                      <td data-label="Buyer Name">{{ $buyer->name }}</td>
+                      <td data-label="Buyer Phone">{{ $buyer->phone ?? '—' }}</td>
+                      <td data-label="Buyer Location">{{ $buyer->location ?? '—' }}</td>
+
                       <td data-label="Actions">
                         <div class="table-actions">
                           <a href="{{ route('admin.buyers.preferences.investment.show', $inv) }}" class="btn-table btn-table-view">
@@ -247,11 +277,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Turn all .buyer-table into DataTables with search + pagination
             $('.buyer-table').DataTable({
                 pageLength: 10,
-                lengthChange: false,   // hide "show X entries"
-                ordering: true         // keep column sorting; set to false if you don't want it
+                lengthChange: false,
+                ordering: true
             });
         });
     </script>

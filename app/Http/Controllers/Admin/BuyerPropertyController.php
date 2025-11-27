@@ -13,26 +13,18 @@ class BuyerPropertyController extends Controller
 {
     public function index(User $buyer, Request $request)
     {
-        $tab = $request->get('tab', 'land');
+         $tab = $request->get('tab', 'land');
 
-        $landPreferences = BuyerLandPreference::
-            orderBy('created_at', 'desc')
-            ->get();
+    $landPreferences = $buyer->buyerLandPreferences()->latest()->get();
+    $buildingPreferences = $buyer->buyerBuildingPreferences()->latest()->get();
+    $investmentPreferences = $buyer->buyerInvestmentPreferences()->latest()->get();
 
-        $buildingPreferences = BuyerBuildingPreference::
-            orderBy('created_at', 'desc')
-            ->get();
-
-        $investmentPreferences = BuyerInvestmentPreference::
-            orderBy('created_at', 'desc')
-            ->get();
-
-        return view('admin.buyers.properties-index', [
-            'buyer'                 => $buyer,
-            'tab'                   => $tab,
-            'landPreferences'       => $landPreferences,
-            'buildingPreferences'   => $buildingPreferences,
-            'investmentPreferences' => $investmentPreferences,
-        ]);
+    return view('admin.buyers.properties-index', compact(
+        'buyer',
+        'tab',
+        'landPreferences',
+        'buildingPreferences',
+        'investmentPreferences'
+    ));
     }
 }

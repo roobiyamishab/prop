@@ -15,7 +15,7 @@ class SellerBuildingListing extends Model
         'user_id',
         'property_code',
         'status',
-
+'created_by_admin_id',
         'district',
         'area',
         'street_name',
@@ -43,18 +43,25 @@ class SellerBuildingListing extends Model
         // 'videos', // only if you create this column in DB and use it
     ];
 
-    protected $casts = [
-        'total_plot_area'  => 'decimal:2',
-        'builtup_area'     => 'decimal:2',
-        'expected_price'   => 'decimal:2',
-        'price_per_sqft'   => 'decimal:2',
-        'lift_available'   => 'boolean',
+     protected $casts = [
+        // numbers
+        'total_plot_area'     => 'decimal:2',
+        'builtup_area'        => 'decimal:2',
+        'expected_price'      => 'decimal:2',
+        'price_per_sqft'      => 'decimal:2',
+        'parking_slots'       => 'integer',
+        'road_frontage'       => 'integer',
+        'expected_advance_pct'=> 'integer',
+        'floors'              => 'integer',
 
-        // 👇 important for JSON columns
-        'documents'        => 'array',
-        'photos'           => 'array',
-        // 'videos'        => 'array', // if you add videos json column
+        // booleans
+        'lift_available'      => 'boolean',
+
+        // json
+        'photos'              => 'array',
+        'documents'           => 'array',
     ];
+
 
     public function user()
     {
@@ -66,4 +73,14 @@ class SellerBuildingListing extends Model
         return $this->hasMany(PropertyMatch::class, 'seller_listing_id')
                     ->where('listing_type', 'building');
     }
+    // In SellerLandListing, SellerBuildingListing, SellerInvestmentListing
+
+
+public function createdByAdmin()
+{
+    return $this->belongsTo(Admin::class, 'created_by_admin_id'); // the admin who added it
+}
+
+
+
 }

@@ -19,6 +19,9 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
+            // 🔹 NEW FIELD — admin who created listing
+            $table->unsignedBigInteger('created_by_admin_id')->nullable();
+
             $table->string('property_code', 20)->unique(); // INV100, JV100, COM100 etc.
 
             // Status: normal / hot / urgent / sold / booked / off_market
@@ -40,8 +43,8 @@ return new class extends Migration
             $table->string('profit_sharing_model', 255)->nullable();
             $table->string('payback_period', 100)->nullable();
 
-            // Project status (separate from hot/urgent sale)
-            $table->string('project_status', 150)->nullable(); // approvals in process, etc.
+            // Project status
+            $table->string('project_status', 150)->nullable();
             $table->integer('completion_percent')->nullable(); // 0–100
 
             // Documents

@@ -7,6 +7,10 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminBuyerPreferenceController;
 use App\Http\Controllers\Admin\AdminSellerListingController;
 use App\Http\Controllers\Admin\BuyerPropertyController;
+use App\Http\Controllers\Admin\SellerLandListingController; // 🔹 add this
+use App\Http\Controllers\Admin\SellerBuildingListingController;
+use App\Http\Controllers\Admin\SellerInvestmentListingController;
+use App\Http\Controllers\Admin\SellerPropertyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -121,27 +125,49 @@ Route::middleware('auth:admin')
         // ----------------------------------------------------
         // SUPER ADMIN – SELLER LISTINGS
         // ----------------------------------------------------
-
-        // Create seller listings for a specific user
-        Route::prefix('seller/{user}')
-            ->name('seller.')
-            ->group(function () {
-
-                Route::post('/land', [AdminSellerListingController::class, 'storeLand'])
-                    ->name('land.store');
-
-                Route::post('/building', [AdminSellerListingController::class, 'storeBuilding'])
-                    ->name('building.store');
-
-                Route::post('/investment', [AdminSellerListingController::class, 'storeInvestment'])
-                    ->name('investment.store');
-            });
-
-        // Update + status update for existing listings
         Route::prefix('seller')
             ->name('seller.')
             ->group(function () {
 
+                // 🔹 CREATE / STORE (no {user} in URI, user_id comes from form)
+                Route::post('/land', [SellerLandListingController::class, 'store'])
+                    ->name('land.store');          // => admin.seller.land.store
+
+                Route::post('/building', [SellerBuildingListingController::class, 'storeBuilding'])
+                    ->name('building.store');      // => admin.seller.building.store
+
+                Route::post('/investment', [SellerInvestmentListingController::class, 'storeInvestment'])
+                    ->name('investment.store');    // => admin.seller.investment.store
+
+ Route::get('/land/{land}', [SellerLandListingController::class, 'showLand'])
+            ->name('land.show');          // admin.seller.land.show
+
+            Route::get('/land/{land}/edit', [AdminSellerListingController::class, 'editLand'])
+                    ->name('land.edit');
+
+                Route::delete('/land/{land}', [SellerlandListingController::class, 'destroyLand'])
+                    ->name('land.destroy');
+
+        Route::get('/building/{building}', [SellerBuildingListingController::class, 'showBuilding'])
+            ->name('building.show');      // admin.seller.building.show
+              Route::get('/building/{building}/edit', [SellerBuildingListingController::class, 'editBuilding'])
+                    ->name('building.edit');
+
+                Route::delete('/building/{building}', [SellerBuildingListingController::class, 'destroyBuilding'])
+                    ->name('building.destroy');
+
+        Route::get('/investment/{investment}', [SellerInvestmentListingController::class, 'showInvestment'])
+            ->name('investment.show');    // admin.seller.investment.show
+             Route::get('/investment/{investment}/edit', [SellerInvestmentListingController::class, 'editInvestment'])
+                    ->name('investment.edit');
+
+                Route::delete('/investment/{investment}', [SellerInvestmentListingController::class, 'destroyInvestment'])
+                    ->name('investment.destroy');
+
+
+
+
+                // 🔹 UPDATE + STATUS routes (if you already have these in AdminSellerListingController)
                 Route::patch('/land/{land}/status', [AdminSellerListingController::class, 'updateLandStatus'])
                     ->name('land.status.update');
 
@@ -159,5 +185,10 @@ Route::middleware('auth:admin')
 
                 Route::patch('/investment/{investment}', [AdminSellerListingController::class, 'updateInvestment'])
                     ->name('investment.update');
+
+
+                Route::get('/sellers/{seller}/properties', [SellerPropertyController::class, 'index'])
+    ->name('properties.index');
+
             });
     });

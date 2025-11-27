@@ -16,7 +16,8 @@ class SellerLandListing extends Model
 
     protected $fillable = [
         'user_id',
-        'property_code',
+         'created_by_admin_id',
+          'property_code',
          'status',  
         'district',
         'taluk',
@@ -89,6 +90,10 @@ class SellerLandListing extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function createdByAdmin()
+{
+    return $this->belongsTo(Admin::class, 'created_by_admin_id'); // the admin who added it
+}
 
     public function matches()
     {

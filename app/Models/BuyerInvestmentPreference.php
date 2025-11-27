@@ -35,4 +35,8 @@ class BuyerInvestmentPreference extends Model
     {
         return $this->belongsTo(User::class);
     }
+      public function createdByAdmin()
+    {
+        return $this->belongsTo(Admin::class, 'created_by_admin_id');
+    }
 }

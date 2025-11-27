@@ -1267,10 +1267,10 @@
       <div class="accordion-content">
         <form class="module-form"
               method="POST"
-              action="{{ route('seller.land.store') }}"
+              action="{{ route('admin.seller.land.store') }}"
               enctype="multipart/form-data">
           @csrf
-
+ <input type="hidden" name="user_id" value="{{ $user->id }}">
           <h4>Location Details</h4>
           <div class="form-row">
             <div class="form-group">
@@ -1473,10 +1473,10 @@
       <div class="accordion-content">
         <form class="module-form"
               method="POST"
-              action="{{ route('admin.seller.building.store', $user) }}"
+              action="{{ route('admin.seller.building.store') }}"
               enctype="multipart/form-data">
           @csrf
-
+<input type="hidden" name="user_id" value="{{ $user->id }}">
           <h4>Location Details</h4>
           <div class="form-row">
             <div class="form-group">
@@ -1610,9 +1610,12 @@
       <div class="accordion-content">
         <form class="module-form"
               method="POST"
-              action="{{ route('admin.seller.investment.store', $user) }}"
-              enctype="multipart/form-data">
-          @csrf
+             action="{{ route('admin.seller.investment.store') }}"
+      enctype="multipart/form-data">
+    @csrf
+    <input type="hidden" name="user_id" value="{{ $user->id }}">
+    {{-- project_name, project_type, district, etc. --}}
+   
 
           <h4>Project Overview</h4>
           <div class="form-group">
@@ -1704,6 +1707,9 @@
         </form>
       </div>
     </div>
+
+
+    
 <!-- ====== MY LISTINGS (Dynamic) ====== -->
 {{-- ========== SELLER MODULE LISTINGS + EDIT MODALS (LIGHT THEME) ========== --}}
 
@@ -2497,7 +2503,13 @@
     </form>
   </div>
 </div>
-
+<div class="accordion-card accordion-link-card">
+  <a href="{{ route('admin.seller.properties.index', ['seller' => $user->id]) }}"
+     class="accordion-header accordion-link">
+    <h3>All properties</h3>
+    <span class="accordion-icon">↗</span>
+  </a>
+</div>
 
 
 

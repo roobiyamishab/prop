@@ -83,4 +83,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(PropertyMatch::class);
     }
+
+     public function buyerLandPreferences()
+    {
+        return $this->hasMany(BuyerLandPreference::class);
+    }
+
+    public function buyerBuildingPreferences()
+    {
+        return $this->hasMany(BuyerBuildingPreference::class);
+    }
+
+    public function buyerInvestmentPreferences()
+    {
+        return $this->hasMany(BuyerInvestmentPreference::class);
+    }
 }
