@@ -1,0 +1,131 @@
+<svg viewBox="0 0 2400 900" xmlns="http://www.w3.org/2000/svg" width="2400" height="900">
+  <!-- Background -->
+  <rect width="2400" height="900" fill="#ffffff"/>
+  
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Logo Symbol: Key + Location Pin = Perfect Match -->
+  <g transform="translate(180, 210)">
+    
+    <!-- Left Side: KEY (Represents Buyers/Access) -->
+    <g>
+      <!-- Key Head (Circle with AI brain pattern) -->
+      <circle cx="120" cy="240" r="66" fill="url(#blueGrad)"/>
+      
+      <!-- AI Neural nodes inside key head -->
+      <circle cx="105" cy="225" r="7.5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="135" cy="225" r="7.5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="120" cy="255" r="7.5" fill="#ffffff" opacity="0.9"/>
+      <line x1="105" y1="225" x2="135" y2="225" stroke="#ffffff" stroke-width="4.5" opacity="0.7"/>
+      <line x1="105" y1="225" x2="120" y2="255" stroke="#ffffff" stroke-width="4.5" opacity="0.7"/>
+      <line x1="135" y1="225" x2="120" y2="255" stroke="#ffffff" stroke-width="4.5" opacity="0.7"/>
+      
+      <!-- Key Shaft -->
+      <rect x="186" y="222" width="105" height="36" fill="url(#blueGrad)" rx="6"/>
+      
+      <!-- Key Teeth -->
+      <rect x="264" y="222" width="12" height="18" fill="url(#blueGrad)"/>
+      <rect x="282" y="222" width="12" height="30" fill="url(#blueGrad)"/>
+    </g>
+    
+    <!-- Right Side: LOCATION PIN (Represents Properties) -->
+    <g transform="translate(165, 0)">
+      <!-- Pin Shape -->
+      <path d="M 210 150 Q 210 105, 255 105 Q 300 105, 300 150 Q 300 195, 255 270 Q 210 195, 210 150 Z" 
+            fill="url(#orangeGrad)"/>
+      
+      <!-- Building icon inside pin -->
+      <rect x="240" y="132" width="30" height="36" fill="#ffffff" opacity="0.9"/>
+      <rect x="243" y="138" width="6" height="6" fill="url(#orangeGrad)"/>
+      <rect x="255" y="138" width="6" height="6" fill="url(#orangeGrad)"/>
+      <rect x="243" y="150" width="6" height="6" fill="url(#orangeGrad)"/>
+      <rect x="255" y="150" width="6" height="6" fill="url(#orangeGrad)"/>
+    </g>
+    
+    <!-- Center Connection: The "MATCH" - Magnetic Connection -->
+    <g transform="translate(150, 0)">
+      <!-- Connecting spark/energy -->
+      <circle cx="180" cy="240" r="24" fill="#10b981" opacity="0.3"/>
+      <circle cx="180" cy="240" r="12" fill="#10b981"/>
+      
+      <!-- Connection lines showing AI matching -->
+      <path d="M 144 240 L 174 240" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+      <path d="M 186 240 L 216 240" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+      
+      <!-- Small data points -->
+      <circle cx="165" cy="225" r="4.5" fill="#10b981" opacity="0.6"/>
+      <circle cx="195" cy="225" r="4.5" fill="#10b981" opacity="0.6"/>
+      <circle cx="165" cy="255" r="4.5" fill="#10b981" opacity="0.6"/>
+      <circle cx="195" cy="255" r="4.5" fill="#10b981" opacity="0.6"/>
+    </g>
+  </g>
+  
+  <!-- Brand Name -->
+  <text x="750" y="375" 
+        font-family="'Segoe UI', 'Arial', sans-serif" 
+        font-size="174" 
+        font-weight="700" 
+        fill="#1e293b">AI</text>
+  
+  <text x="960" y="375" 
+        font-family="'Segoe UI', 'Arial', sans-serif" 
+        font-size="174" 
+        font-weight="600" 
+        fill="#2563eb">prop</text>
+  
+  <text x="1410" y="375" 
+        font-family="'Segoe UI', 'Arial', sans-serif" 
+        font-size="174" 
+        font-weight="700" 
+        fill="#f59e0b">Match</text>
+  
+  <!-- Tagline with meaning -->
+  <text x="750" y="480" 
+        font-family="'Segoe UI', 'Arial', sans-serif" 
+        font-size="48" 
+        font-weight="500" 
+        fill="#64748b" 
+        letter-spacing="4.5">
+    Unlock Your Perfect Property
+  </text>
+  
+  <!-- Domain -->
+  <text x="750" y="555" 
+        font-family="'Segoe UI', 'Arial', sans-serif" 
+        font-size="42" 
+        font-weight="400" 
+        fill="#94a3b8">
+    aipropmatch.com
+  </text>
+  
+  <!-- Meaning explanation boxes -->
+  <g transform="translate(750, 600)">
+    <!-- Key meaning -->
+    <rect x="0" y="0" width="420" height="135" fill="#eff6ff" rx="12"/>
+    <circle cx="45" cy="66" r="24" fill="#2563eb"/>
+    <text x="90" y="54" font-family="Arial" font-size="33" font-weight="600" fill="#1e293b">Buyers</text>
+    <text x="90" y="96" font-family="Arial" font-size="27" fill="#64748b">Access &amp; Search</text>
+    
+    <!-- Match meaning -->
+    <rect x="450" y="0" width="420" height="135" fill="#f0fdf4" rx="12"/>
+    <circle cx="495" cy="66" r="24" fill="#10b981"/>
+    <text x="540" y="54" font-family="Arial" font-size="33" font-weight="600" fill="#1e293b">AI Match</text>
+    <text x="540" y="96" font-family="Arial" font-size="27" fill="#64748b">Perfect Connection</text>
+    
+    <!-- Pin meaning -->
+    <rect x="900" y="0" width="420" height="135" fill="#fff7ed" rx="12"/>
+    <circle cx="945" cy="66" r="24" fill="#f59e0b"/>
+    <text x="990" y="54" font-family="Arial" font-size="33" font-weight="600" fill="#1e293b">Properties</text>
+    <text x="990" y="96" font-family="Arial" font-size="27" fill="#64748b">Premium Listings</text>
+  </g>
+</svg>

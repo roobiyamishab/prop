@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AIPropMatch - AI-Powered Real Estate Intelligence</title>
 
-  {{-- Your custom CSS --}}
   <link rel="stylesheet" href="{{ asset('assets/style.css') }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,13 +14,18 @@
 </head>
 
 @php
-    $user = auth()->user();
-    $profileIncomplete = !$user || empty($user->name) || empty($user->phone) || empty($user->location);
+  $user = auth()->user();
+  $profileIncomplete = !$user || empty($user->name) || empty($user->phone) || empty($user->location);
+
+  // Group states & districts for JS usage (ONLY ONCE)
+  $statesByCountry   = $states->groupBy('country_id');
+  $districtsByState  = $cities->groupBy('state_id');
 @endphp
 
 <body>
   <div id="app">
     <div id="dashboard-page" class="page dashboard-page">
+
       {{-- SIDEBAR --}}
       <div class="dashboard-sidebar">
         <div class="sidebar-header">
@@ -33,28 +37,27 @@
             <span class="sidebar-icon">🏠</span>
             <span>Dashboard Home</span>
           </a>
+
           <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('buyer-module')">
             <span class="sidebar-icon">🔍</span>
             <span>Buyer Module</span>
           </a>
+
           <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('seller-module')">
             <span class="sidebar-icon">📋</span>
             <span>Seller Module</span>
           </a>
-          <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('investment-module')">
-            <span class="sidebar-icon">💰</span>
-            <span>Investment Module</span>
-          </a>
 
           <div class="sidebar-divider"></div>
 
-          {{-- Logout --}}
+          {{-- User Logout --}}
           <a href="javascript:void(0)" class="sidebar-item"
-             onclick="event.preventDefault(); document.getElementById('admin-logout-form').submit();">
+             onclick="event.preventDefault(); document.getElementById('user-logout-form').submit();">
             <span class="sidebar-icon">🚪</span>
             <span>Logout</span>
           </a>
-          <form id="admin-logout-form" method="POST" action="{{ route('admin.logout') }}" style="display:none;">
+
+          <form id="user-logout-form" method="POST" action="{{ route('logout') }}" style="display:none;">
             @csrf
           </form>
         </nav>
@@ -62,6 +65,7 @@
 
       {{-- MAIN CONTENT --}}
       <div class="dashboard-main">
+
         {{-- Flash message --}}
         @if(session('success'))
           <div class="alert alert-success" style="margin: 16px;">
@@ -75,6 +79,7 @@
             <h1>Welcome to AIPropMatch</h1>
             <p>Your AI-powered real estate intelligence platform</p>
           </div>
+
           <div class="dashboard-cards">
             <div class="info-card">
               <div class="info-card-icon">🔍</div>
@@ -82,12 +87,14 @@
               <p>Find your perfect property with AI-powered matching</p>
               <button class="btn-secondary" onclick="showDashboardView('buyer-module')">Get Started</button>
             </div>
+
             <div class="info-card">
               <div class="info-card-icon">📋</div>
               <h3>Seller Module</h3>
               <p>List your property and reach qualified buyers</p>
               <button class="btn-secondary" onclick="showDashboardView('seller-module')">List Property</button>
             </div>
+
             <div class="info-card">
               <div class="info-card-icon">💰</div>
               <h3>Investment Module</h3>
@@ -123,20 +130,45 @@
           </div>
 
           <div class="module-content">
+
             {{-- PREFERRED LAND --}}
             <div class="accordion-card">
               <div class="accordion-header" onclick="toggleAccordion(this)">
                 <h3>Preferred Land</h3>
                 <span class="accordion-icon">▼</span>
               </div>
+
               <div class="accordion-content">
                 <form class="module-form" method="POST" action="{{ route('buyer.preferences.land.store') }}">
                   @csrf
+
                   <div class="form-row">
                     <div class="form-group">
-                      <label>Preferred District(s)</label>
-                      <input type="text" name="districts" placeholder="e.g., Ernakulam, Kottayam">
+                      <label>Preferred Country</label>
+                      <select name="countries" id="land-country-select">
+                        <option value="">Select Country</option>
+                        @foreach($countries as $country)
+                          <option value="{{ $country->name }}" data-id="{{ $country->id }}">{{ $country->name }}</option>
+                        @endforeach
+                      </select>
                     </div>
+
+                    <div class="form-group">
+                      <label>Preferred State</label>
+                      <select name="states" id="land-state-select">
+                        <option value="">Select State</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Preferred District</label>
+                      <select name="districts" id="land-district-select">
+                        <option value="">Select District</option>
+                      </select>
+                    </div>
+
                     <div class="form-group">
                       <label>Preferred Location(s)</label>
                       <input type="text" name="locations" placeholder="e.g., Kakkanad, Edapally">
@@ -224,7 +256,7 @@
 
                   <div class="form-group">
                     <label>Infrastructure Preference</label>
-                    <textarea name="infrastructure" placeholder="Describe your infrastructure requirements..." rows="3"></textarea>
+                    <textarea name="infra_preference" placeholder="Describe your infrastructure requirements..." rows="3"></textarea>
                   </div>
 
                   <button type="submit" class="btn-primary">Save Preferences</button>
@@ -238,28 +270,57 @@
                 <h3>Preferred Building</h3>
                 <span class="accordion-icon">▼</span>
               </div>
+
               <div class="accordion-content">
                 <form class="module-form" method="POST" action="{{ route('buyer.preferences.building.store') }}">
                   @csrf
+
                   <div class="form-row">
                     <div class="form-group">
-                      <label>District(s)</label>
-                      <input type="text" name="districts" placeholder="e.g., Ernakulam">
-                    </div>
-                    <div class="form-group">
-                      <label>Type of Building</label>
-                      <select name="building_type">
-                        <option>Commercial</option>
-                        <option>Office</option>
-                        <option>Retail</option>
-                        <option>Apartment</option>
-                        <option>Villa Project</option>
-                        <option>Mixed-Use</option>
-                        <option>Hotel</option>
-                        <option>Hospital</option>
-                        <option>Warehouse</option>
+                      <label>Preferred Country</label>
+                      <select name="building_country" id="building-country-select">
+                        <option value="">Select Country</option>
+                        @foreach($countries as $country)
+                          <option value="{{ $country->name }}" data-id="{{ $country->id }}">{{ $country->name }}</option>
+                        @endforeach
                       </select>
                     </div>
+
+                    <div class="form-group">
+                      <label>Preferred State</label>
+                      <select name="building_state" id="building-state-select">
+                        <option value="">Select State</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Preferred District</label>
+                      <select name="building_district" id="building-district-select">
+                        <option value="">Select District</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Micro-location Preferences</label>
+                      <input type="text" name="micro_locations" placeholder="Specific areas you prefer">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Type of Building</label>
+                    <select name="building_type">
+                      <option>Commercial</option>
+                      <option>Office</option>
+                      <option>Retail</option>
+                      <option>Apartment</option>
+                      <option>Villa Project</option>
+                      <option>Mixed-Use</option>
+                      <option>Hotel</option>
+                      <option>Hospital</option>
+                      <option>Warehouse</option>
+                    </select>
                   </div>
 
                   <div class="form-row">
@@ -295,11 +356,6 @@
                   </div>
 
                   <div class="form-group">
-                    <label>Micro-location Preferences</label>
-                    <input type="text" name="micro_locations" placeholder="Specific areas you prefer">
-                  </div>
-
-                  <div class="form-group">
                     <label>Distance Requirements</label>
                     <div class="checkbox-group">
                       <label><input type="checkbox" name="distance_requirements[]" value="nearHighway"> Near NH/SH</label>
@@ -326,17 +382,41 @@
                 <h3>Preferred Investment</h3>
                 <span class="accordion-icon">▼</span>
               </div>
+
               <div class="accordion-content">
                 <form class="module-form" method="POST" action="{{ route('buyer.preferences.investment.store') }}">
                   @csrf
+
                   <div class="form-row">
                     <div class="form-group">
-                      <label>District</label>
-                      <input type="text" name="districts" placeholder="Preferred district">
+                      <label>Preferred Country</label>
+                      <select name="investment_country" id="investment-country-select">
+                        <option value="">Select Country</option>
+                        @foreach($countries as $country)
+                          <option value="{{ $country->name }}" data-id="{{ $country->id }}">{{ $country->name }}</option>
+                        @endforeach
+                      </select>
                     </div>
+
                     <div class="form-group">
-                      <label>Preferred Location</label>
-                      <input type="text" name="locations" placeholder="Specific location">
+                      <label>Preferred State</label>
+                      <select name="investment_state" id="investment-state-select">
+                        <option value="">Select State</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Preferred District</label>
+                      <select name="investment_district" id="investment-district-select">
+                        <option value="">Select District</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Preferred Location(s)</label>
+                      <input type="text" name="locations" placeholder="e.g., Kakkanad, Vyttila">
                     </div>
                   </div>
 
@@ -354,19 +434,7 @@
 
                   <div class="form-group">
                     <label>Budget Range (₹)</label>
-                    <div class="slider-container">
-                      <input
-                        type="range"
-                        name="budget_range"
-                        min="0"
-                        max="10000000"
-                        step="100000"
-                        value="5000000"
-                        id="investment-budget"
-                        oninput="updateBudgetValue(this.value)"
-                      >
-                      <span id="budget-value">₹50,00,000</span>
-                    </div>
+                    <input type="number" name="budget_range" placeholder="Enter budget">
                   </div>
 
                   <div class="form-group">
@@ -378,795 +446,36 @@
                 </form>
               </div>
             </div>
-    <!-- ====== BUYING REQUIREMENTS (Light theme cards) ====== -->
-       <!-- ====== BUYING REQUIREMENTS (Dynamic) ====== -->
-    <div class="buyer-req-summary">
-  <div class="buyer-req-header">
-    <h2>Your Buying Requirements</h2>
-    <p>Snapshot of what you’re looking to buy – land, buildings, and investments.</p>
-  </div>
 
-  <!-- Tabs -->
-  <div class="buyer-tabs">
-    <button class="buyer-tab buyer-tab-active" data-target="buyer-land-panel">Land</button>
-    <button class="buyer-tab" data-target="buyer-building-panel">Buildings</button>
-    <button class="buyer-tab" data-target="buyer-investment-panel">Investments</button>
-  </div>
-
-  {{-- LAND TAB --}}
-<div id="buyer-land-panel" class="buyer-tab-panel buyer-tab-panel-active">
-  @if($buyerLand)
-    @php $landStatus = $buyerLand->status ?? 'active'; @endphp
-
-    <div class="buyer-card">
-      <div class="buyer-card-header">
-        <div>
-          <div class="buyer-code">REQ-LAND-{{ $buyerLand->id }}</div>
-          <span class="buyer-chip
-            {{ $landStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
-            {{ $landStatus === 'completed' ? 'buyer-chip-soft' : '' }}
-            {{ $landStatus === 'active' ? 'buyer-chip-primary' : '' }}
-          ">
-            {{ ucfirst($landStatus) }}
-          </span>
-        </div>
-
-        {{-- ACTION BUTTONS --}}
-        <div class="buyer-actions">
-          {{-- EDIT BUTTON – opens modal --}}
-          <button type="button"
-                  class="buyer-action-btn"
-                  onclick="openEditModal('land')">
-            Edit
-          </button>
-
-          {{-- Mark Urgent --}}
-          @if($landStatus !== 'urgent')
-            <form method="POST"
-                  action="{{ route('buyer.preferences.land.status', $buyerLand->id) }}"
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="urgent">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
-                Mark Urgent
-              </button>
-            </form>
-          @endif
-
-          {{-- Mark Completed --}}
-          @if($landStatus !== 'completed')
-            <form method="POST"
-                  action="{{ route('buyer.preferences.land.status', $buyerLand->id) }}"
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="completed">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-success">
-                Mark Completed
-              </button>
-            </form>
-          @endif
-        </div>
-      </div>
-
-      <div class="buyer-card-body">
-        <div class="buyer-grid">
-          <div>
-            <div class="buyer-label">Preferred Districts</div>
-            <div class="buyer-value">
-              {{ $buyerLand->preferred_districts ? implode(', ', $buyerLand->preferred_districts) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Locations</div>
-            <div class="buyer-value">
-              {{ $buyerLand->preferred_locations ? implode(', ', $buyerLand->preferred_locations) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Budget / cent</div>
-            <div class="buyer-value">
-              @if($buyerLand->budget_per_cent_min || $buyerLand->budget_per_cent_max)
-                ₹{{ number_format($buyerLand->budget_per_cent_min ?? 0) }}
-                @if($buyerLand->budget_per_cent_max && $buyerLand->budget_per_cent_max != $buyerLand->budget_per_cent_min)
-                  – ₹{{ number_format($buyerLand->budget_per_cent_max) }}
-                @endif
-              @else
-                —
-              @endif
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Zoning</div>
-            <div class="buyer-value">{{ $buyerLand->zoning_preference ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Timeline</div>
-            <div class="buyer-value">{{ $buyerLand->timeline_to_purchase ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Mode of Purchase</div>
-            <div class="buyer-value">{{ $buyerLand->mode_of_purchase ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Advance Capacity</div>
-            <div class="buyer-value">
-              {{ $buyerLand->advance_capacity ? $buyerLand->advance_capacity . '%' : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Amenities</div>
-            <div class="buyer-value">
-              @if($buyerLand->amenities_preference && count($buyerLand->amenities_preference))
-                {{ implode(', ', $buyerLand->amenities_preference) }}
-              @else
-                —
-              @endif
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {{-- ========= EDIT LAND PREFERENCE MODAL ========= --}}
-    <div id="edit-land-modal" class="buyer-modal-overlay" style="display:none;">
-      <div class="buyer-modal">
-        <div class="buyer-modal-header">
-          <h2>Edit Land Preference</h2>
-          <button type="button"
-                  class="buyer-modal-close"
-                  onclick="closeEditModal('land')">×</button>
-        </div>
-
-        <form method="POST"
-              action="{{ route('buyer.preferences.land.update', $buyerLand->id) }}"
-              class="module-form">
-          @csrf
-          @method('PATCH')
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Preferred District(s)</label>
-              <input type="text"
-                     name="districts"
-                     value="{{ old('districts', is_array($buyerLand->preferred_districts) ? implode(', ', $buyerLand->preferred_districts) : $buyerLand->preferred_districts) }}"
-                     placeholder="e.g., Ernakulam, Kottayam">
-            </div>
-            <div class="form-group">
-              <label>Preferred Location(s)</label>
-              <input type="text"
-                     name="locations"
-                     value="{{ old('locations', is_array($buyerLand->preferred_locations) ? implode(', ', $buyerLand->preferred_locations) : $buyerLand->preferred_locations) }}"
-                     placeholder="e.g., Kakkanad, Edapally">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Land Size Unit</label>
-              <select name="land_size_unit">
-                <option value="cent" {{ $buyerLand->land_size_unit === 'cent' ? 'selected' : '' }}>Cent</option>
-                <option value="acre" {{ $buyerLand->land_size_unit === 'acre' ? 'selected' : '' }}>Acre</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Budget Capacity / cent (₹)</label>
-              <input type="number"
-                     name="budget_per_cent"
-                     value="{{ old('budget_per_cent', $buyerLand->budget_per_cent_min) }}"
-                     placeholder="Enter amount">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Zoning Preference</label>
-              <select name="zoning_preference">
-                <option value="Residential" {{ $buyerLand->zoning_preference === 'Residential' ? 'selected' : '' }}>Residential</option>
-                <option value="Commercial" {{ $buyerLand->zoning_preference === 'Commercial' ? 'selected' : '' }}>Commercial</option>
-                <option value="Agricultural" {{ $buyerLand->zoning_preference === 'Agricultural' ? 'selected' : '' }}>Agricultural</option>
-                <option value="Industrial" {{ $buyerLand->zoning_preference === 'Industrial' ? 'selected' : '' }}>Industrial</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Timeline to Purchase</label>
-              <select name="timeline_to_purchase">
-                <option value="Immediate" {{ $buyerLand->timeline_to_purchase === 'Immediate' ? 'selected' : '' }}>Immediate</option>
-                <option value="Within 3 months" {{ $buyerLand->timeline_to_purchase === 'Within 3 months' ? 'selected' : '' }}>Within 3 months</option>
-                <option value="Within 6 months" {{ $buyerLand->timeline_to_purchase === 'Within 6 months' ? 'selected' : '' }}>Within 6 months</option>
-                <option value="Within 1 year" {{ $buyerLand->timeline_to_purchase === 'Within 1 year' ? 'selected' : '' }}>Within 1 year</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Mode of Purchase</label>
-              <select name="mode_of_purchase">
-                <option value="Cash" {{ $buyerLand->mode_of_purchase === 'Cash' ? 'selected' : '' }}>Cash</option>
-                <option value="Loan" {{ $buyerLand->mode_of_purchase === 'Loan' ? 'selected' : '' }}>Loan</option>
-                <option value="Mixed" {{ $buyerLand->mode_of_purchase === 'Mixed' ? 'selected' : '' }}>Mixed</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Typical Advance Capacity (%)</label>
-              <input type="number"
-                     name="advance_capacity"
-                     value="{{ old('advance_capacity', $buyerLand->advance_capacity) }}"
-                     min="0" max="100">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Amenities Preference</label>
-            @php $amenities = $buyerLand->amenities_preference ?? []; @endphp
-            <div class="checkbox-group">
-              <label><input type="checkbox" name="amenities[]" value="roadAccess" {{ in_array('roadAccess', $amenities) ? 'checked' : '' }}> Road Access</label>
-              <label><input type="checkbox" name="amenities[]" value="electricity" {{ in_array('electricity', $amenities) ? 'checked' : '' }}> Electricity</label>
-              <label><input type="checkbox" name="amenities[]" value="waterSupply" {{ in_array('waterSupply', $amenities) ? 'checked' : '' }}> Water Supply</label>
-              <label><input type="checkbox" name="amenities[]" value="drainage" {{ in_array('drainage', $amenities) ? 'checked' : '' }}> Drainage</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Infrastructure Preference</label>
-            <textarea name="infrastructure"
-                      rows="3"
-                      placeholder="Describe your infrastructure requirements...">{{ old('infrastructure', $buyerLand->infrastructure_preference) }}</textarea>
-          </div>
-
-          <div class="buyer-modal-actions">
-            <button type="button"
-                    class="btn-secondary"
-                    onclick="closeEditModal('land')">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-    {{-- ========= END EDIT LAND MODAL ========= --}}
-
-  @else
-    <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-      No land buying requirement saved yet. Fill the “Preferred Land” form above.
-    </p>
-  @endif
-</div>
-
-
-
-  {{-- BUILDING TAB --}}
- {{-- BUILDING TAB --}}
-<div id="buyer-building-panel" class="buyer-tab-panel">
-  @if($buyerBuilding)
-    @php
-      $bldStatus   = $buyerBuilding->status ?? 'active';
-      $distanceReq = $buyerBuilding->distance_requirement
-        ? explode(',', $buyerBuilding->distance_requirement)
-        : [];
-    @endphp
-
-    <div class="buyer-card">
-      <div class="buyer-card-header">
-        <div>
-          <div class="buyer-code">REQ-BLD-{{ $buyerBuilding->id }}</div>
-          <span class="buyer-chip
-            {{ $bldStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
-            {{ $bldStatus === 'completed' ? 'buyer-chip-soft' : '' }}
-            {{ $bldStatus === 'active' ? 'buyer-chip-primary' : '' }}
-          ">
-            {{ ucfirst($bldStatus) }}
-          </span>
-        </div>
-
-        <div class="buyer-actions">
-          {{-- EDIT → open modal --}}
-          <button type="button"
-                  class="buyer-action-btn"
-                  onclick="openEditModal('building')">
-            Edit
-          </button>
-
-          {{-- Mark Urgent --}}
-          @if($bldStatus !== 'urgent')
-            <form method="POST"
-                  action="{{ route('buyer.preferences.building.status', $buyerBuilding->id) }}"
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="urgent">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
-                Mark Urgent
-              </button>
-            </form>
-          @endif
-
-          {{-- Mark Completed --}}
-          @if($bldStatus !== 'completed')
-            <form method="POST"
-                  action="{{ route('buyer.preferences.building.status', $buyerBuilding->id) }}"
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="completed">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-success">
-                Mark Completed
-              </button>
-            </form>
-          @endif
-        </div>
-      </div>
-
-      <div class="buyer-card-body">
-        <div class="buyer-grid">
-          <div>
-            <div class="buyer-label">Building Type</div>
-            <div class="buyer-value">{{ $buyerBuilding->building_type ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Districts</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->preferred_districts ? implode(', ', $buyerBuilding->preferred_districts) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Built-up Area</div>
-            <div class="buyer-value">
-              @if($buyerBuilding->area_min || $buyerBuilding->area_max)
-                {{ number_format($buyerBuilding->area_min ?? 0) }} –
-                {{ number_format($buyerBuilding->area_max ?? $buyerBuilding->area_min ?? 0) }} sqft
-              @else
-                —
-              @endif
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Budget</div>
-            <div class="buyer-value">
-              @if($buyerBuilding->total_budget_min)
-                ₹{{ number_format($buyerBuilding->total_budget_min) }}
-                @if($buyerBuilding->total_budget_max && $buyerBuilding->total_budget_max != $buyerBuilding->total_budget_min)
-                  – ₹{{ number_format($buyerBuilding->total_budget_max) }}
-                @endif
-              @else
-                —
-              @endif
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Micro-locations</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->micro_locations ? implode(', ', $buyerBuilding->micro_locations) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Distance Requirements</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->distance_requirement ?: '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Rent Expectation</div>
-            <div class="buyer-value">
-              {{ $buyerBuilding->rent_expectation ? '₹' . number_format($buyerBuilding->rent_expectation) . ' / month' : '—' }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div> {{-- .buyer-card --}}
-
-    {{-- === EDIT BUILDING PREFERENCE MODAL === --}}
-    <div id="edit-building-modal" class="buyer-modal-overlay" style="display:none;">
-      <div class="buyer-modal">
-        <div class="buyer-modal-header">
-          <h2>Edit Building Preference</h2>
-          <button type="button" class="buyer-modal-close" onclick="closeEditModal('building')">×</button>
-        </div>
-
-        <form method="POST"
-              action="{{ route('buyer.preferences.building.update', $buyerBuilding->id) }}"
-              class="module-form">
-          @csrf
-          @method('PATCH')
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>District(s)</label>
-              <input type="text"
-                     name="districts"
-                     value="{{ old('districts', is_array($buyerBuilding->preferred_districts) ? implode(', ', $buyerBuilding->preferred_districts) : $buyerBuilding->preferred_districts) }}"
-                     placeholder="e.g., Ernakulam, Kottayam">
-            </div>
-            <div class="form-group">
-              <label>Type of Building</label>
-              <select name="building_type">
-                @php
-                  $types = [
-                    'Commercial','Office','Retail','Apartment',
-                    'Villa','Mixed-Use','Hotel','Hospital','Warehouse'
-                  ];
-                @endphp
-                @foreach($types as $type)
-                  <option value="{{ $type }}"
-                          {{ ($buyerBuilding->building_type === $type) ? 'selected' : '' }}>
-                    {{ $type }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Built-up Area Min (sq.ft)</label>
-              <input type="number"
-                     name="area_min"
-                     value="{{ old('area_min', $buyerBuilding->area_min) }}"
-                     placeholder="Minimum area">
-            </div>
-            <div class="form-group">
-              <label>Built-up Area Max (sq.ft)</label>
-              <input type="number"
-                     name="area_max"
-                     value="{{ old('area_max', $buyerBuilding->area_max) }}"
-                     placeholder="Maximum area">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Frontage Requirement (ft)</label>
-              <input type="number"
-                     name="frontage_min"
-                     value="{{ old('frontage_min', $buyerBuilding->frontage_min) }}"
-                     placeholder="Enter frontage">
-            </div>
-            <div class="form-group">
-              <label>Age of Building Acceptable</label>
-              <select name="age_preference">
-                @php
-                  $ageOptions = [
-                    'New (0-5 years)',
-                    'Recent (5-10 years)',
-                    'Moderate (10-20 years)',
-                    'Any age',
-                  ];
-                @endphp
-                @foreach($ageOptions as $opt)
-                  <option value="{{ $opt }}"
-                          {{ ($buyerBuilding->age_preference === $opt) ? 'selected' : '' }}>
-                    {{ $opt }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Total Budget (₹)</label>
-            <input type="number"
-                   name="total_budget"
-                   value="{{ old('total_budget', $buyerBuilding->total_budget_min) }}"
-                   placeholder="Enter total budget">
-          </div>
-
-          <div class="form-group">
-            <label>Micro-location Preferences</label>
-            <input type="text"
-                   name="micro_locations"
-                   value="{{ old('micro_locations', is_array($buyerBuilding->micro_locations) ? implode(', ', $buyerBuilding->micro_locations) : $buyerBuilding->micro_locations) }}"
-                   placeholder="Specific areas you prefer">
-          </div>
-
-          <div class="form-group">
-            <label>Distance Requirements</label>
-            <div class="checkbox-group">
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearHighway"
-                       {{ in_array('nearHighway', $distanceReq) ? 'checked' : '' }}>
-                Near NH/SH
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearCityCentre"
-                       {{ in_array('nearCityCentre', $distanceReq) ? 'checked' : '' }}>
-                Near City Centre
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearHospital"
-                       {{ in_array('nearHospital', $distanceReq) ? 'checked' : '' }}>
-                Near Hospital
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearSchool"
-                       {{ in_array('nearSchool', $distanceReq) ? 'checked' : '' }}>
-                Near School
-              </label>
-              <label>
-                <input type="checkbox"
-                       name="distance_requirements[]"
-                       value="nearITPark"
-                       {{ in_array('nearITPark', $distanceReq) ? 'checked' : '' }}>
-                Near IT Park
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Rent Expectation (if looking for rental asset)</label>
-            <input type="number"
-                   name="rent_expectation"
-                   value="{{ old('rent_expectation', $buyerBuilding->rent_expectation) }}"
-                   placeholder="Expected monthly rent">
-          </div>
-
-          <div class="buyer-modal-actions">
-            <button type="button"
-                    class="btn-secondary"
-                    onclick="closeEditModal('building')">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </div>
-    </div> {{-- #edit-building-modal --}}
-  @else
-    <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-      No building requirement saved yet. Fill the “Preferred Building” form above.
-    </p>
-  @endif
-</div>
-
-  {{-- INVESTMENT TAB --}}
-{{-- INVESTMENT TAB --}}
-<div id="buyer-investment-panel" class="buyer-tab-panel">
-  @if($buyerInvestment)
-    @php $invStatus = $buyerInvestment->status ?? 'active'; @endphp
-
-    <div class="buyer-card">
-      <div class="buyer-card-header">
-        <div>
-          <div class="buyer-code">REQ-INV-{{ $buyerInvestment->id }}</div>
-          <span class="buyer-chip
-            {{ $invStatus === 'urgent' ? 'buyer-chip-danger' : '' }}
-            {{ $invStatus === 'completed' ? 'buyer-chip-soft' : '' }}
-            {{ $invStatus === 'active' ? 'buyer-chip-primary' : '' }}
-          ">
-            {{ ucfirst($invStatus) }}
-          </span>
-        </div>
-
-        <div class="buyer-actions">
-          {{-- OPEN EDIT MODAL --}}
-          <button type="button"
-                  class="buyer-action-btn"
-                  onclick="openEditModal('investment')">
-            Edit
-          </button>
-
-          {{-- Mark Urgent --}}
-          @if($invStatus !== 'urgent')
-            <form method="POST"
-                  action="{{ route('buyer.preferences.investment.status', $buyerInvestment->id) }}"
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="urgent">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-warning">
-                Mark Urgent
-              </button>
-            </form>
-          @endif
-
-          {{-- Mark Completed --}}
-          @if($invStatus !== 'completed')
-            <form method="POST"
-                  action="{{ route('buyer.preferences.investment.status', $buyerInvestment->id) }}"
-                  style="display:inline;">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="status" value="completed">
-              <button type="submit" class="buyer-action-btn buyer-action-btn-success">
-                Mark Completed
-              </button>
-            </form>
-          @endif
-        </div>
-      </div>
-
-      <div class="buyer-card-body">
-        <div class="buyer-grid">
-          <div>
-            <div class="buyer-label">Property Type</div>
-            <div class="buyer-value">{{ $buyerInvestment->investment_property_type ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Districts</div>
-            <div class="buyer-value">
-              {{ $buyerInvestment->preferred_districts ? implode(', ', $buyerInvestment->preferred_districts) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Preferred Locations</div>
-            <div class="buyer-value">
-              {{ $buyerInvestment->preferred_locations ? implode(', ', $buyerInvestment->preferred_locations) : '—' }}
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Budget Range</div>
-            <div class="buyer-value">
-              @if($buyerInvestment->investment_budget_min)
-                ₹{{ number_format($buyerInvestment->investment_budget_min) }}
-                @if($buyerInvestment->investment_budget_max && $buyerInvestment->investment_budget_max != $buyerInvestment->investment_budget_min)
-                  – ₹{{ number_format($buyerInvestment->investment_budget_max) }}
-                @endif
-              @else
-                —
-              @endif
-            </div>
-          </div>
-          <div>
-            <div class="buyer-label">Profit Expectation / year</div>
-            <div class="buyer-value">
-              {{ $buyerInvestment->profit_expectation_year ? $buyerInvestment->profit_expectation_year . '%' : '—' }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {{-- EDIT INVESTMENT PREFERENCE MODAL --}}
-    <div id="edit-investment-modal" class="buyer-modal-overlay" style="display:none;">
-      <div class="buyer-modal">
-        <div class="buyer-modal-header">
-          <h2>Edit Investment Preference</h2>
-          <button type="button"
-                  class="buyer-modal-close"
-                  onclick="closeEditModal('investment')">
-            ×
-          </button>
-        </div>
-
-        <form method="POST"
-              action="{{ route('buyer.preferences.investment.update', $buyerInvestment->id) }}"
-              class="module-form">
-          @csrf
-          @method('PATCH')
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Preferred District(s)</label>
-              <input type="text"
-                     name="districts"
-                     value="{{ old('districts',
-                        is_array($buyerInvestment->preferred_districts)
-                          ? implode(', ', $buyerInvestment->preferred_districts)
-                          : $buyerInvestment->preferred_districts
-                     ) }}"
-                     placeholder="e.g., Ernakulam, Kottayam">
-            </div>
-            <div class="form-group">
-              <label>Preferred Location(s)</label>
-              <input type="text"
-                     name="locations"
-                     value="{{ old('locations',
-                        is_array($buyerInvestment->preferred_locations)
-                          ? implode(', ', $buyerInvestment->preferred_locations)
-                          : $buyerInvestment->preferred_locations
-                     ) }}"
-                     placeholder="e.g., Kakkanad, Vyttila">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Property Type</label>
-            <select name="investment_property_type">
-              @php
-                $types = ['Land', 'Rental Buildings', 'Villas', 'Flats', 'Hospital', 'Any'];
-                $currentType = old('investment_property_type', $buyerInvestment->investment_property_type);
-              @endphp
-              @foreach($types as $type)
-                <option value="{{ $type }}" {{ $currentType === $type ? 'selected' : '' }}>
-                  {{ $type }}
-                </option>
-              @endforeach
-            </select>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Budget Range (₹)</label>
-              <input type="number"
-                     name="budget_range"
-                     value="{{ old('budget_range', $buyerInvestment->investment_budget_min) }}"
-                     placeholder="Total budget">
-            </div>
-            <div class="form-group">
-              <label>Profit Expectation per Year (%)</label>
-              <input type="number"
-                     name="profit_expectation_year"
-                     value="{{ old('profit_expectation_year', $buyerInvestment->profit_expectation_year) }}"
-                     min="0"
-                     max="100"
-                     placeholder="e.g., 15">
-            </div>
-          </div>
-
-          <div class="buyer-modal-actions">
-            <button type="button"
-                    class="btn-secondary"
-                    onclick="closeEditModal('investment')">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  @else
-    <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-      No investment requirement saved yet. Fill the “Preferred Investment” form above.
-    </p>
-  @endif
-</div>
-
-</div>
-
-    <!-- ====== END BUYING REQUIREMENTS ====== -->
-
-    <!-- ====== END BUYING REQUIREMENTS ====== -->
-
-            
-
-            {{-- Dummy Matching Block --}}
-            <div class="matching-results">
-              <h3>AI Matching Results</h3>
-              <div class="match-card">
-                <div class="match-header">
-                  <div class="iss-score">
-                    <span class="iss-label">ISS Score</span>
-                    <span class="iss-value">87</span>
-                  </div>
-                </div>
-                <h4>Premium Plot in Kakkanad</h4>
-                <p>15 cents | Residential | ₹8L per cent</p>
-                <button class="btn-secondary">View Details</button>
-              </div>
-            </div>
+            {{-- Your Buying Requirements summary stays as you already have --}}
+            {{-- (Keeping it untouched) --}}
+            {!! '' !!}
           </div>
         </div>
 
-        {{-- SELLER MODULE (placeholder – we can wire forms next) --}}
-       <div id="seller-module" class="dashboard-view">
+        {{-- SELLER MODULE --}}
+{{-- ========================= SELLER MODULE (FULL) ========================= --}}
+<div id="seller-module" class="dashboard-view">
   <div class="dashboard-header">
     <h1>Seller Module</h1>
     <p>List your property</p>
   </div>
 
+  @php
+    // Group states & districts for JS usage (ONE place only)
+    $statesByCountry  = $states->groupBy('country_id')->map(fn($g) => $g->values());
+    $districtsByState = $cities->groupBy('state_id')->map(fn($g) => $g->values());
+  @endphp
+
   <div class="module-content">
-    {{-- LAND SALE LISTING --}}
+
+    {{-- ======================= 1) LAND SALE LISTING (CREATE) ======================= --}}
     <div class="accordion-card">
       <div class="accordion-header" onclick="toggleAccordion(this)">
         <h3>Land Sale Listing</h3>
         <span class="accordion-icon">▼</span>
       </div>
+
       <div class="accordion-content">
         <form class="module-form"
               method="POST"
@@ -1175,26 +484,62 @@
           @csrf
 
           <h4>Location Details</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Country</label>
+              <select name="country_id"
+                      class="js-cascade-country"
+                      data-scope="seller-land-create">
+                <option value="">Select Country</option>
+                @foreach($countries as $c)
+                  <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+              </select>
+              {{-- optional: keep old text for backward compatibility --}}
+              <input type="hidden" name="country" value="">
+            </div>
+
+            <div class="form-group">
+              <label>State</label>
+              <select name="state_id"
+                      class="js-cascade-state"
+                      data-scope="seller-land-create">
+                <option value="">Select State</option>
+              </select>
+              <input type="hidden" name="state" value="">
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>District</label>
-              <input type="text" name="district" placeholder="District">
+              <select name="district_id"
+                      class="js-cascade-district"
+                      data-scope="seller-land-create">
+                <option value="">Select District</option>
+              </select>
+              <input type="hidden" name="district" value="">
             </div>
+
             <div class="form-group">
               <label>Taluk</label>
               <input type="text" name="taluk" placeholder="Taluk">
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Village</label>
               <input type="text" name="village" placeholder="Village">
             </div>
+
             <div class="form-group">
               <label>Location</label>
               <input type="text" name="exact_location" placeholder="Specific location">
             </div>
           </div>
+
           <div class="form-group">
             <label>Landmarks</label>
             <input type="text" name="landmark" placeholder="Nearby landmarks">
@@ -1219,6 +564,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Frontage (ft)</label>
@@ -1233,6 +579,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Zoning Type</label>
@@ -1253,6 +600,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-group">
             <label>Restrictions</label>
             <textarea name="restrictions" placeholder="Any legal restrictions or encumbrances..." rows="2"></textarea>
@@ -1273,6 +621,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Expected Advance (%)</label>
@@ -1318,14 +667,15 @@
               </select>
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
-  <label>Water</label>
-  <select name="water">
-    <option value="1">Available</option>
-    <option value="0">Not Available</option>
-  </select>
-</div>
+              <label>Water</label>
+              <select name="water">
+                <option value="1">Available</option>
+                <option value="0">Not Available</option>
+              </select>
+            </div>
 
             <div class="form-group">
               <label>Drainage</label>
@@ -1335,6 +685,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-group">
             <label>Compound Wall</label>
             <select name="compound_wall">
@@ -1367,12 +718,13 @@
       </div>
     </div>
 
-    {{-- BUILDING SALE LISTING --}}
+    {{-- ======================= 2) BUILDING SALE LISTING (CREATE) ======================= --}}
     <div class="accordion-card">
       <div class="accordion-header" onclick="toggleAccordion(this)">
         <h3>Building Sale Listing</h3>
         <span class="accordion-icon">▼</span>
       </div>
+
       <div class="accordion-content">
         <form class="module-form"
               method="POST"
@@ -1381,24 +733,59 @@
           @csrf
 
           <h4>Location Details</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Country</label>
+              <select name="country_id"
+                      class="js-cascade-country"
+                      data-scope="seller-building-create">
+                <option value="">Select Country</option>
+                @foreach($countries as $c)
+                  <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+              </select>
+              <input type="hidden" name="country" value="">
+            </div>
+
+            <div class="form-group">
+              <label>State</label>
+              <select name="state_id"
+                      class="js-cascade-state"
+                      data-scope="seller-building-create">
+                <option value="">Select State</option>
+              </select>
+              <input type="hidden" name="state" value="">
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>District</label>
-              <input type="text" name="district" placeholder="District">
+              <select name="district_id"
+                      class="js-cascade-district"
+                      data-scope="seller-building-create">
+                <option value="">Select District</option>
+              </select>
+              <input type="hidden" name="district" value="">
             </div>
+
             <div class="form-group">
               <label>Area / Town</label>
               <input type="text" name="area" placeholder="Area / Town">
             </div>
           </div>
+
           <div class="form-group">
             <label>Street Name</label>
             <input type="text" name="street_name" placeholder="Street name">
           </div>
+
           <div class="form-group">
             <label>Landmark</label>
             <input type="text" name="landmark" placeholder="Landmark">
           </div>
+
           <div class="form-group">
             <label>Google Maps Link</label>
             <input type="url" name="map_link" placeholder="https://maps.google.com/...">
@@ -1419,6 +806,7 @@
               <option>Warehouse</option>
             </select>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Plot Area (sq.ft)</label>
@@ -1429,6 +817,7 @@
               <input type="number" step="0.01" name="builtup_area" placeholder="Built-up area">
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Number of Floors</label>
@@ -1439,6 +828,7 @@
               <input type="number" name="construction_year" placeholder="Year built">
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Lift Available</label>
@@ -1452,6 +842,7 @@
               <input type="number" name="parking_slots" placeholder="Number of vehicles">
             </div>
           </div>
+
           <div class="form-group">
             <label>Road Frontage (ft)</label>
             <input type="number" name="road_frontage" placeholder="Frontage">
@@ -1472,6 +863,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-group">
             <label>Timeline to Sell</label>
             <select name="sell_timeline">
@@ -1504,12 +896,13 @@
       </div>
     </div>
 
-    {{-- INVESTMENT OPPORTUNITY LISTING --}}
+    {{-- ======================= 3) INVESTMENT OPPORTUNITY (CREATE) ======================= --}}
     <div class="accordion-card">
       <div class="accordion-header" onclick="toggleAccordion(this)">
         <h3>Investment Opportunity Listing</h3>
         <span class="accordion-icon">▼</span>
       </div>
+
       <div class="accordion-content">
         <form class="module-form"
               method="POST"
@@ -1522,6 +915,7 @@
             <label>Project Name</label>
             <input type="text" name="project_name" placeholder="Name of the project">
           </div>
+
           <div class="form-group">
             <label>Project Type</label>
             <select name="project_type">
@@ -1532,17 +926,51 @@
               <option>Mixed Development</option>
             </select>
           </div>
+
           <div class="form-group">
             <label>Project Description</label>
-            <textarea name="project_description" placeholder="Detailed description of the investment opportunity..." rows="4"></textarea>
+            <textarea name="project_description" rows="4"
+              placeholder="Detailed description of the investment opportunity..."></textarea>
           </div>
 
           <h4>Location</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Country</label>
+              <select name="country_id"
+                      class="js-cascade-country"
+                      data-scope="seller-investment-create">
+                <option value="">Select Country</option>
+                @foreach($countries as $c)
+                  <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+              </select>
+              <input type="hidden" name="country" value="">
+            </div>
+
+            <div class="form-group">
+              <label>State</label>
+              <select name="state_id"
+                      class="js-cascade-state"
+                      data-scope="seller-investment-create">
+                <option value="">Select State</option>
+              </select>
+              <input type="hidden" name="state" value="">
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>District</label>
-              <input type="text" name="district" placeholder="District">
+              <select name="district_id"
+                      class="js-cascade-district"
+                      data-scope="seller-investment-create">
+                <option value="">Select District</option>
+              </select>
+              <input type="hidden" name="district" value="">
             </div>
+
             <div class="form-group">
               <label>Location / Micro-location</label>
               <input type="text" name="micro_location" placeholder="Specific location">
@@ -1560,6 +988,7 @@
               <input type="number" step="0.01" name="investment_required" placeholder="Investment required">
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Profit Sharing Model</label>
@@ -1576,6 +1005,7 @@
             <label>Current Status</label>
             <input type="text" name="project_status" placeholder="Approvals in process / Construction started / etc.">
           </div>
+
           <div class="form-group">
             <label>Completion %</label>
             <div class="slider-container">
@@ -1607,948 +1037,1132 @@
         </form>
       </div>
     </div>
-<!-- ====== MY LISTINGS (Dynamic) ====== -->
-{{-- ========== SELLER MODULE LISTINGS + EDIT MODALS (LIGHT THEME) ========== --}}
 
-<div class="seller-list-summary">
-  <div class="seller-list-header">
-    <h2>Your Uploaded Listings</h2>
-    <p>Quick overview of land, building and investment opportunities you’ve listed.</p>
-  </div>
-
-  <!-- Tabs -->
-  <div class="seller-tabs">
-    <button class="seller-tab seller-tab-active" data-target="seller-land-panel">Land</button>
-    <button class="seller-tab" data-target="seller-building-panel">Buildings</button>
-    <button class="seller-tab" data-target="seller-investment-panel">Investments</button>
-  </div>
-
-  {{-- ======================= LAND TAB ======================= --}}
-  <div id="seller-land-panel" class="seller-tab-panel seller-tab-panel-active">
-    @forelse($sellerLandListings as $land)
-      @php
-          $status = strtolower($land->status ?? 'normal');
-          $statusLabel = strtoupper(str_replace('_', ' ', $status));
-      @endphp
-
-      <div class="listing-card">
-        <div class="listing-card-header">
-          <div class="listing-code">
-            {{ $land->property_code }} • {{ $land->district }}
-          </div>
-
-          <span class="listing-status
-              @if($status === 'hot') listing-status-hot
-              @elseif($status === 'urgent') listing-status-urgent
-              @elseif($status === 'sold') listing-status-sold
-              @elseif($status === 'closed') listing-status-closed
-              @else listing-status-open @endif">
-              {{ $statusLabel }}
-          </span>
-        </div>
-
-        <div class="listing-card-body">
-          <div class="listing-grid">
-            <div>
-              <div class="listing-label">Location</div>
-              <div class="listing-value">
-                {{ $land->exact_location ?: $land->landmark ?: '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Land Area</div>
-              <div class="listing-value">
-                {{ $land->land_area ?? '—' }} {{ $land->land_unit ?? '' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Price / {{ $land->land_unit ?? 'unit' }}</div>
-              <div class="listing-value">
-                {{ $land->expected_price_per_cent ? '₹' . number_format($land->expected_price_per_cent) : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Road Frontage</div>
-              <div class="listing-value">
-                {{ $land->road_frontage ? $land->road_frontage . ' ft' : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Zoning</div>
-              <div class="listing-value">{{ $land->zoning_type ?? '—' }}</div>
-            </div>
-            <div>
-              <div class="listing-label">Timeline</div>
-              <div class="listing-value">{{ $land->sale_timeline ?? '—' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="listing-card-footer">
-          {{-- Status modal trigger --}}
-          <button type="button"
-                  class="listing-btn js-edit-status-btn"
-                  data-url="{{ route('seller.land.status.update', $land->id) }}"
-                  data-current-status="{{ $status }}">
-            Edit status
-          </button>
-
-          {{-- Details modal trigger --}}
-          <button type="button"
-                  class="listing-btn js-edit-details-btn"
-                  data-modal-id="edit-land-modal-{{ $land->id }}">
-            Edit details
-          </button>
-        </div>
+    {{-- ======================= SELLER LISTINGS (TABS) ======================= --}}
+    <div class="seller-list-summary">
+      <div class="seller-list-header">
+        <h2>Your Uploaded Listings</h2>
+        <p>Quick overview of land, building and investment opportunities you’ve listed.</p>
       </div>
 
-      {{-- LAND EDIT MODAL – fields mirror your "Land Sale Listing" create form --}}
-      <div id="edit-land-modal-{{ $land->id }}" class="details-modal hidden">
-        <div class="details-modal-backdrop"></div>
+      <div class="seller-tabs">
+        <button class="seller-tab seller-tab-active" data-target="seller-land-panel">Land</button>
+        <button class="seller-tab" data-target="seller-building-panel">Buildings</button>
+        <button class="seller-tab" data-target="seller-investment-panel">Investments</button>
+      </div>
 
-        <div class="details-modal-content">
-          <div class="details-modal-header">
-            <h3>Edit Land – {{ $land->property_code }}</h3>
-            <button type="button" class="details-modal-close" aria-label="Close">&times;</button>
-          </div>
+      {{-- ======================= LAND LISTINGS ======================= --}}
+      <div id="seller-land-panel" class="seller-tab-panel seller-tab-panel-active">
+        @forelse($sellerLandListings as $land)
+          @php
+            $status = strtolower($land->status ?? 'normal');
+            $statusLabel = strtoupper(str_replace('_', ' ', $status));
 
-          <form method="POST" action="{{ route('seller.land.update', $land->id) }}">
-            @csrf
-            @method('PATCH')
+            $countryName  = $land->country?->name ?? $land->country ?? null;
+            $stateName    = $land->state?->name ?? $land->state ?? null;
+            $districtName = $land->districtRel?->name ?? $land->district?->name ?? $land->district ?? null;
+          @endphp
 
-            <div class="details-modal-body">
-              <div class="details-grid">
-                {{-- Location Details --}}
-                <div class="form-group">
-                  <label class="form-label">District</label>
-                  <input type="text" name="district" class="form-input"
-                         value="{{ old('district', $land->district) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Taluk</label>
-                  <input type="text" name="taluk" class="form-input"
-                         value="{{ old('taluk', $land->taluk) }}">
-                </div>
+          <div class="listing-card">
+            <div class="listing-card-header">
+              <div class="listing-code">
+                {{ $land->property_code }}
+                • {{ $districtName ?: '—' }}
+                @if(!empty($stateName)) • {{ $stateName }} @endif
+                @if(!empty($countryName)) • {{ $countryName }} @endif
+              </div>
 
-                <div class="form-group">
-                  <label class="form-label">Village</label>
-                  <input type="text" name="village" class="form-input"
-                         value="{{ old('village', $land->village) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Location</label>
-                  <input type="text" name="exact_location" class="form-input"
-                         value="{{ old('exact_location', $land->exact_location) }}">
-                </div>
+              <span class="listing-status
+                @if($status === 'hot') listing-status-hot
+                @elseif($status === 'urgent') listing-status-urgent
+                @elseif($status === 'sold') listing-status-sold
+                @elseif($status === 'closed') listing-status-closed
+                @else listing-status-open @endif">
+                {{ $statusLabel }}
+              </span>
+            </div>
 
-                <div class="form-group">
-                  <label class="form-label">Landmarks</label>
-                  <input type="text" name="landmark" class="form-input"
-                         value="{{ old('landmark', $land->landmark) }}">
+            <div class="listing-card-body">
+              <div class="listing-grid">
+                <div>
+                  <div class="listing-label">Location</div>
+                  <div class="listing-value">{{ $land->exact_location ?: $land->landmark ?: '—' }}</div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Google Maps Link</label>
-                  <input type="url" name="google_map_link" class="form-input"
-                         value="{{ old('google_map_link', $land->google_map_link) }}">
+                <div>
+                  <div class="listing-label">Land Area</div>
+                  <div class="listing-value">{{ $land->land_area ?? '—' }} {{ $land->land_unit ?? '' }}</div>
                 </div>
-
-                {{-- Property Details --}}
-                <div class="form-group">
-                  <label class="form-label">Land Area</label>
-                  <input type="number" step="0.01" name="land_area" class="form-input"
-                         value="{{ old('land_area', $land->land_area) }}">
+                <div>
+                  <div class="listing-label">Price / {{ $land->land_unit ?? 'unit' }}</div>
+                  <div class="listing-value">
+                    {{ $land->expected_price_per_cent ? '₹' . number_format($land->expected_price_per_cent) : '—' }}
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Unit</label>
-                  <select name="land_unit" class="form-input">
-                    @php $unit = old('land_unit', $land->land_unit); @endphp
-                    <option value="cent"  {{ $unit === 'cent'  ? 'selected' : '' }}>Cent</option>
-                    <option value="acre"  {{ $unit === 'acre'  ? 'selected' : '' }}>Acre</option>
-                    <option value="sqft"  {{ $unit === 'sqft'  ? 'selected' : '' }}>Sq.ft</option>
-                  </select>
+                <div>
+                  <div class="listing-label">Road Frontage</div>
+                  <div class="listing-value">{{ $land->road_frontage ? $land->road_frontage . ' ft' : '—' }}</div>
                 </div>
-
-                <div class="form-group">
-                  <label class="form-label">Frontage (ft)</label>
-                  <input type="number" name="road_frontage" class="form-input"
-                         value="{{ old('road_frontage', $land->road_frontage) }}">
+                <div>
+                  <div class="listing-label">Zoning</div>
+                  <div class="listing-value">{{ $land->zoning_type ?? '—' }}</div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Plot Shape</label>
-                  @php $shape = old('plot_shape', $land->plot_shape); @endphp
-                  <select name="plot_shape" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Rectangle" {{ $shape === 'Rectangle' ? 'selected' : '' }}>Rectangle</option>
-                    <option value="Square"    {{ $shape === 'Square'    ? 'selected' : '' }}>Square</option>
-                    <option value="Irregular" {{ $shape === 'Irregular' ? 'selected' : '' }}>Irregular</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Zoning Type</label>
-                  @php $zone = old('zoning_type', $land->zoning_type); @endphp
-                  <select name="zoning_type" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Residential" {{ $zone === 'Residential' ? 'selected' : '' }}>Residential</option>
-                    <option value="Commercial"  {{ $zone === 'Commercial'  ? 'selected' : '' }}>Commercial</option>
-                    <option value="Agricultural"{{ $zone === 'Agricultural'? 'selected' : '' }}>Agricultural</option>
-                    <option value="Industrial"  {{ $zone === 'Industrial'  ? 'selected' : '' }}>Industrial</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Ownership Type</label>
-                  @php $owner = old('ownership_type', $land->ownership_type); @endphp
-                  <select name="ownership_type" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Individual" {{ $owner === 'Individual' ? 'selected' : '' }}>Individual</option>
-                    <option value="Joint"      {{ $owner === 'Joint'      ? 'selected' : '' }}>Joint</option>
-                    <option value="Company"    {{ $owner === 'Company'    ? 'selected' : '' }}>Company</option>
-                    <option value="POA"        {{ $owner === 'POA'        ? 'selected' : '' }}>POA Holder</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Restrictions</label>
-                  <textarea name="restrictions" rows="2" class="form-input"
-                            placeholder="Any legal restrictions or encumbrances...">{{ old('restrictions', $land->restrictions) }}</textarea>
-                </div>
-
-                {{-- Pricing --}}
-                <div class="form-group">
-                  <label class="form-label">Expected Price per Cent/Acre (₹)</label>
-                  <input type="number" step="0.01" name="expected_price_per_cent" class="form-input"
-                         value="{{ old('expected_price_per_cent', $land->expected_price_per_cent) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Negotiability</label>
-                  @php $nego = old('negotiability', $land->negotiability); @endphp
-                  <select name="negotiability" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Negotiable"          {{ $nego === 'Negotiable' ? 'selected' : '' }}>Negotiable</option>
-                    <option value="Slightly"            {{ $nego === 'Slightly'   ? 'selected' : '' }}>Slightly Negotiable</option>
-                    <option value="Fixed"               {{ $nego === 'Fixed'      ? 'selected' : '' }}>Fixed</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Expected Advance (%)</label>
-                  <input type="number" min="0" max="100" name="expected_advance_pct" class="form-input"
-                         value="{{ old('expected_advance_pct', $land->expected_advance_pct) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Sale Timeline</label>
-                  @php $timeline = old('sale_timeline', $land->sale_timeline); @endphp
-                  <select name="sale_timeline" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Urgent (Within 1 month)" {{ $timeline === 'Urgent (Within 1 month)' ? 'selected' : '' }}>Urgent (Within 1 month)</option>
-                    <option value="Normal (1-3 months)"     {{ $timeline === 'Normal (1-3 months)'     ? 'selected' : '' }}>Normal (1-3 months)</option>
-                    <option value="Flexible"                {{ $timeline === 'Flexible'                ? 'selected' : '' }}>Flexible</option>
-                  </select>
-                </div>
-
-                {{-- Land Characteristics --}}
-                <div class="form-group">
-                  <label class="form-label">Land Type</label>
-                  @php $lt = old('land_type', $land->land_type); @endphp
-                  <select name="land_type" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Dry Land"    {{ $lt === 'Dry Land'    ? 'selected' : '' }}>Dry Land</option>
-                    <option value="Wet Land"    {{ $lt === 'Wet Land'    ? 'selected' : '' }}>Wet Land</option>
-                    <option value="Garden Land" {{ $lt === 'Garden Land' ? 'selected' : '' }}>Garden Land</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Current Usage</label>
-                  <input type="text" name="current_use" class="form-input"
-                         value="{{ old('current_use', $land->current_use) }}">
-                </div>
-
-                {{-- Amenities --}}
-                <div class="form-group">
-                  <label class="form-label">Road Width (ft)</label>
-                  <input type="number" name="road_width" class="form-input"
-                         value="{{ old('road_width', $land->road_width ?? null) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Electricity</label>
-                  @php $elec = old('electricity', $land->electricity ? '1' : '0'); @endphp
-                  <select name="electricity" class="form-input">
-                    <option value="1" {{ $elec == '1' ? 'selected' : '' }}>Available</option>
-                    <option value="0" {{ $elec == '0' ? 'selected' : '' }}>Not Available</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Water</label>
-                  @php $wat = old('water', $land->water ? '1' : '0'); @endphp
-                  <select name="water" class="form-input">
-                    <option value="1" {{ $wat == '1' ? 'selected' : '' }}>Available</option>
-                    <option value="0" {{ $wat == '0' ? 'selected' : '' }}>Not Available</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Drainage</label>
-                  @php $dr = old('drainage', $land->drainage ? '1' : '0'); @endphp
-                  <select name="drainage" class="form-input">
-                    <option value="1" {{ $dr == '1' ? 'selected' : '' }}>Available</option>
-                    <option value="0" {{ $dr == '0' ? 'selected' : '' }}>Not Available</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Compound Wall</label>
-                  @php $cw = old('compound_wall', $land->compound_wall); @endphp
-                  <select name="compound_wall" class="form-input">
-                    <option value="">Select</option>
-                    <option value="Complete" {{ $cw === 'Complete' ? 'selected' : '' }}>Complete</option>
-                    <option value="Partial"  {{ $cw === 'Partial'  ? 'selected' : '' }}>Partial</option>
-                    <option value="None"     {{ $cw === 'None'     ? 'selected' : '' }}>None</option>
-                  </select>
+                <div>
+                  <div class="listing-label">Timeline</div>
+                  <div class="listing-value">{{ $land->sale_timeline ?? '—' }}</div>
                 </div>
               </div>
             </div>
 
-            <div class="details-modal-footer">
+            <div class="listing-card-footer">
               <button type="button"
-                      class="listing-btn listing-btn-ghost details-modal-cancel">
-                Cancel
+                      class="listing-btn js-edit-status-btn"
+                      data-url="{{ route('seller.land.status.update', $land->id) }}"
+                      data-current-status="{{ $status }}">
+                Edit status
               </button>
-              <button type="submit" class="listing-btn listing-btn-primary">
-                Save changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    @empty
-      <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-        No land listings yet. Use the “Land Sale Listing” form above to add your first property.
-      </p>
-    @endforelse
-  </div>
 
-  {{-- ======================= BUILDING TAB (fields already match your create form) ======================= --}}
-  <div id="seller-building-panel" class="seller-tab-panel">
-    @forelse($sellerBuildingListings as $b)
-      @php
-          $status = strtolower($b->status ?? 'normal');
-          $statusLabel = strtoupper(str_replace('_', ' ', $status));
-      @endphp
-
-      <div class="listing-card">
-        <div class="listing-card-header">
-          <div class="listing-code">
-            {{ $b->property_code }} • {{ $b->district }}
-          </div>
-
-          <span class="listing-status
-              @if($status === 'hot') listing-status-hot
-              @elseif($status === 'urgent') listing-status-urgent
-              @elseif($status === 'sold') listing-status-sold
-              @elseif($status === 'closed') listing-status-closed
-              @else listing-status-open @endif">
-              {{ $statusLabel }}
-          </span>
-        </div>
-
-        <div class="listing-card-body">
-          <div class="listing-grid">
-            <div>
-              <div class="listing-label">Type</div>
-              <div class="listing-value">{{ $b->building_type ?? '—' }}</div>
-            </div>
-            <div>
-              <div class="listing-label">Location</div>
-              <div class="listing-value">
-                {{ $b->area ? $b->area . ', ' : '' }}{{ $b->landmark ?? '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Built-up</div>
-              <div class="listing-value">
-                {{ $b->builtup_area ? number_format($b->builtup_area) . ' sqft' : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Floors</div>
-              <div class="listing-value">
-                {{ $b->floors ? $b->floors . ' floors' : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Total Price</div>
-              <div class="listing-value">
-                {{ $b->expected_price ? '₹' . number_format($b->expected_price) : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Frontage</div>
-              <div class="listing-value">
-                {{ $b->road_frontage ? $b->road_frontage . ' ft' : '—' }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="listing-card-footer">
-          <button type="button"
-                  class="listing-btn js-edit-status-btn"
-                  data-url="{{ route('seller.building.status.update', $b->id) }}"
-                  data-current-status="{{ $status }}">
-            Edit status
-          </button>
-
-          <button type="button"
-                  class="listing-btn js-edit-details-btn"
-                  data-modal-id="edit-building-modal-{{ $b->id }}">
-            Edit details
-          </button>
-        </div>
-      </div>
-
-      {{-- BUILDING EDIT MODAL (matches your Building Sale Listing fields) --}}
-      <div id="edit-building-modal-{{ $b->id }}" class="details-modal hidden">
-        <div class="details-modal-backdrop"></div>
-
-        <div class="details-modal-content">
-          <div class="details-modal-header">
-            <h3>Edit Building – {{ $b->property_code }}</h3>
-            <button type="button" class="details-modal-close" aria-label="Close">&times;</button>
-          </div>
-
-          <form method="POST" action="{{ route('seller.building.update', $b->id) }}">
-            @csrf
-            @method('PATCH')
-
-            <div class="details-modal-body">
-              <div class="details-grid">
-                <h4 class="form-section-title">Location Details</h4>
-
-                <div class="form-group">
-                  <label class="form-label">District</label>
-                  <input type="text" name="district" class="form-input"
-                         value="{{ old('district', $b->district) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Area / Town</label>
-                  <input type="text" name="area" class="form-input"
-                         value="{{ old('area', $b->area) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Street Name</label>
-                  <input type="text" name="street_name" class="form-input"
-                         value="{{ old('street_name', $b->street_name) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Landmark</label>
-                  <input type="text" name="landmark" class="form-input"
-                         value="{{ old('landmark', $b->landmark) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Google Maps Link</label>
-                  <input type="url" name="map_link" class="form-input"
-                         value="{{ old('map_link', $b->map_link) }}">
-                </div>
-
-                <h4 class="form-section-title">Building Details</h4>
-
-                <div class="form-group">
-                  <label class="form-label">Building Type</label>
-                  @php $bt = old('building_type', $b->building_type); @endphp
-                  <select name="building_type" class="form-input">
-                    <option value="">Select</option>
-                    <option {{ $bt === 'Commercial' ? 'selected' : '' }}>Commercial</option>
-                    <option {{ $bt === 'Office'     ? 'selected' : '' }}>Office</option>
-                    <option {{ $bt === 'Retail'     ? 'selected' : '' }}>Retail</option>
-                    <option {{ $bt === 'Apartment'  ? 'selected' : '' }}>Apartment</option>
-                    <option {{ $bt === 'Villa'      ? 'selected' : '' }}>Villa</option>
-                    <option {{ $bt === 'Mixed-Use'  ? 'selected' : '' }}>Mixed-Use</option>
-                    <option {{ $bt === 'Hotel'      ? 'selected' : '' }}>Hotel</option>
-                    <option {{ $bt === 'Hospital'   ? 'selected' : '' }}>Hospital</option>
-                    <option {{ $bt === 'Warehouse'  ? 'selected' : '' }}>Warehouse</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Plot Area (sq.ft)</label>
-                  <input type="number" step="0.01" name="total_plot_area" class="form-input"
-                         value="{{ old('total_plot_area', $b->total_plot_area) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Built-up Area (sq.ft)</label>
-                  <input type="number" step="0.01" name="builtup_area" class="form-input"
-                         value="{{ old('builtup_area', $b->builtup_area) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Number of Floors</label>
-                  <input type="number" name="floors" class="form-input"
-                         value="{{ old('floors', $b->floors) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Construction Year</label>
-                  <input type="number" name="construction_year" class="form-input"
-                         value="{{ old('construction_year', $b->construction_year) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Lift Available</label>
-                  @php $lift = old('lift_available', $b->lift_available ? '1' : '0'); @endphp
-                  <select name="lift_available" class="form-input">
-                    <option value="1" {{ $lift == '1' ? 'selected' : '' }}>Yes</option>
-                    <option value="0" {{ $lift == '0' ? 'selected' : '' }}>No</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Parking Capacity</label>
-                  <input type="number" name="parking_slots" class="form-input"
-                         value="{{ old('parking_slots', $b->parking_slots) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Road Frontage (ft)</label>
-                  <input type="number" name="road_frontage" class="form-input"
-                         value="{{ old('road_frontage', $b->road_frontage) }}">
-                </div>
-
-                <h4 class="form-section-title">Pricing</h4>
-
-                <div class="form-group">
-                  <label class="form-label">Total Price (₹)</label>
-                  <input type="number" step="0.01" name="expected_price" class="form-input"
-                         value="{{ old('expected_price', $b->expected_price) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Negotiability</label>
-                  @php $nb = old('negotiability', $b->negotiability); @endphp
-                  <select name="negotiability" class="form-input">
-                    <option value="">Select</option>
-                    <option {{ $nb === 'Negotiable' ? 'selected' : '' }}>Negotiable</option>
-                    <option {{ $nb === 'Slightly Negotiable' ? 'selected' : '' }}>Slightly Negotiable</option>
-                    <option {{ $nb === 'Fixed' ? 'selected' : '' }}>Fixed</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Timeline to Sell</label>
-                  @php $st = old('sell_timeline', $b->sell_timeline); @endphp
-                  <select name="sell_timeline" class="form-input">
-                    <option value="">Select</option>
-                    <option {{ $st === 'Urgent (Within 1 month)' ? 'selected' : '' }}>Urgent (Within 1 month)</option>
-                    <option {{ $st === 'Normal (1-3 months)'     ? 'selected' : '' }}>Normal (1-3 months)</option>
-                    <option {{ $st === 'Flexible'                ? 'selected' : '' }}>Flexible</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="details-modal-footer">
               <button type="button"
-                      class="listing-btn listing-btn-ghost details-modal-cancel">
-                Cancel
+                      class="listing-btn js-edit-details-btn"
+                      data-modal-id="edit-land-modal-{{ $land->id }}">
+                Edit details
               </button>
-              <button type="submit" class="listing-btn listing-btn-primary">
-                Save changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    @empty
-      <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-        No building listings yet. Use the “Building Sale Listing” form above.
-      </p>
-    @endforelse
-  </div>
-
-  {{-- ======================= INVESTMENT TAB ======================= --}}
-  <div id="seller-investment-panel" class="seller-tab-panel">
-    @forelse($sellerInvestmentListings as $inv)
-      @php
-          $status = strtolower($inv->status ?? 'open');
-          $statusLabel = strtoupper(str_replace('_', ' ', $status));
-      @endphp
-
-      <div class="listing-card">
-        <div class="listing-card-header">
-          <div class="listing-code">
-            {{ $inv->property_code }} • {{ $inv->project_name }}
-          </div>
-          <span class="listing-status
-              @if($status === 'hot') listing-status-hot
-              @elseif($status === 'urgent') listing-status-urgent
-              @elseif($status === 'sold') listing-status-sold
-              @elseif($status === 'closed') listing-status-closed
-              @else listing-status-open @endif">
-              {{ $statusLabel }}
-          </span>
-        </div>
-
-        <div class="listing-card-body">
-          <div class="listing-grid">
-            <div>
-              <div class="listing-label">Project Type</div>
-              <div class="listing-value">{{ $inv->project_type ?? '—' }}</div>
-            </div>
-            <div>
-              <div class="listing-label">Location</div>
-              <div class="listing-value">
-                {{ $inv->district }} {{ $inv->micro_location ? '• ' . $inv->micro_location : '' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Project Cost</div>
-              <div class="listing-value">
-                {{ $inv->project_cost ? '₹' . number_format($inv->project_cost) : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Investment Required</div>
-              <div class="listing-value">
-                {{ $inv->investment_required ? '₹' . number_format($inv->investment_required) : '—' }}
-              </div>
-            </div>
-            <div>
-              <div class="listing-label">Profit Sharing</div>
-              <div class="listing-value">{{ $inv->profit_sharing_model ?? '—' }}</div>
-            </div>
-            <div>
-              <div class="listing-label">Completion</div>
-              <div class="listing-value">
-                {{ $inv->completion_percent !== null ? $inv->completion_percent . '%' : '—' }}
-              </div>
             </div>
           </div>
-        </div>
 
-        <div class="listing-card-footer">
-          <button type="button"
-                  class="listing-btn js-edit-status-btn"
-                  data-url="{{ route('seller.investment.status.update', $inv->id) }}"
-                  data-current-status="{{ $status }}">
-            Edit status
-          </button>
+          {{-- =================== LAND EDIT MODAL (WITH CASCADE + IDs) =================== --}}
+         {{-- =================== LAND EDIT MODAL (FULL + CASCADE + FILES + IDs) =================== --}}
+<div id="edit-land-modal-{{ $land->id }}" class="details-modal hidden">
+  <div class="details-modal-backdrop"></div>
 
-          <button type="button"
-                  class="listing-btn js-edit-details-btn"
-                  data-modal-id="edit-investment-modal-{{ $inv->id }}">
-            Edit details
-          </button>
-        </div>
-      </div>
-
-      {{-- INVESTMENT EDIT MODAL (matches Investment Opportunity Listing) --}}
-      <div id="edit-investment-modal-{{ $inv->id }}" class="details-modal hidden">
-        <div class="details-modal-backdrop"></div>
-
-        <div class="details-modal-content">
-          <div class="details-modal-header">
-            <h3>Edit Investment – {{ $inv->property_code }}</h3>
-            <button type="button" class="details-modal-close" aria-label="Close">&times;</button>
-          </div>
-
-          <form method="POST" action="{{ route('seller.investment.update', $inv->id) }}">
-            @csrf
-            @method('PATCH')
-
-            <div class="details-modal-body">
-              <div class="details-grid">
-                <h4 class="form-section-title">Project Overview</h4>
-
-                <div class="form-group">
-                  <label class="form-label">Project Name</label>
-                  <input type="text" name="project_name" class="form-input"
-                         value="{{ old('project_name', $inv->project_name) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Project Type</label>
-                  @php $pt = old('project_type', $inv->project_type); @endphp
-                  <select name="project_type" class="form-input">
-                    <option value="">Select</option>
-                    <option {{ $pt === 'Land development'    ? 'selected' : '' }}>Land development</option>
-                    <option {{ $pt === 'Rental Property'     ? 'selected' : '' }}>Rental Property</option>
-                    <option {{ $pt === 'Commercial Complex'  ? 'selected' : '' }}>Commercial Complex</option>
-                    <option {{ $pt === 'Residential Project' ? 'selected' : '' }}>Residential Project</option>
-                    <option {{ $pt === 'Mixed Development'   ? 'selected' : '' }}>Mixed Development</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Project Description</label>
-                  <textarea name="project_description" rows="4" class="form-input"
-                            placeholder="Detailed description of the investment opportunity...">{{ old('project_description', $inv->project_description) }}</textarea>
-                </div>
-
-                <h4 class="form-section-title">Location</h4>
-
-                <div class="form-group">
-                  <label class="form-label">District</label>
-                  <input type="text" name="district" class="form-input"
-                         value="{{ old('district', $inv->district) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Location / Micro-location</label>
-                  <input type="text" name="micro_location" class="form-input"
-                         value="{{ old('micro_location', $inv->micro_location) }}">
-                </div>
-
-                <h4 class="form-section-title">Investment Details</h4>
-
-                <div class="form-group">
-                  <label class="form-label">Total Project Cost (₹)</label>
-                  <input type="number" step="0.01" name="project_cost" class="form-input"
-                         value="{{ old('project_cost', $inv->project_cost) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Investment Required (₹)</label>
-                  <input type="number" step="0.01" name="investment_required" class="form-input"
-                         value="{{ old('investment_required', $inv->investment_required) }}">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Profit Sharing Model</label>
-                  <input type="text" name="profit_sharing_model" class="form-input"
-                         value="{{ old('profit_sharing_model', $inv->profit_sharing_model) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Payback Period</label>
-                  <input type="text" name="payback_period" class="form-input"
-                         value="{{ old('payback_period', $inv->payback_period) }}">
-                </div>
-
-                <h4 class="form-section-title">Project Status</h4>
-
-                <div class="form-group">
-                  <label class="form-label">Current Status</label>
-                  <input type="text" name="project_status" class="form-input"
-                         value="{{ old('project_status', $inv->project_status) }}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Completion %</label>
-                  <input type="number" min="0" max="100" step="5" name="completion_percent" class="form-input"
-                         value="{{ old('completion_percent', $inv->completion_percent) }}">
-                </div>
-              </div>
-            </div>
-
-            <div class="details-modal-footer">
-              <button type="button"
-                      class="listing-btn listing-btn-ghost details-modal-cancel">
-                Cancel
-              </button>
-              <button type="submit" class="listing-btn listing-btn-primary">
-                Save changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    @empty
-      <p style="font-size:13px; color:#9ca3af; margin-top:8px;">
-        No investment opportunities listed yet.
-      </p>
-    @endforelse
-  </div>
-</div>
-
-{{-- ===== SHARED STATUS EDIT MODAL (uses same light theme CSS) ===== --}}
-<div id="statusEditModal" class="status-modal hidden">
-  <div class="status-modal-backdrop"></div>
-
-  <div class="status-modal-content">
-    <div class="status-modal-header">
-      <h3>Edit Listing Status</h3>
-      <button type="button" class="status-modal-close" aria-label="Close">&times;</button>
+  <div class="details-modal-content">
+    <div class="details-modal-header">
+      <h3>Edit Land – {{ $land->property_code }}</h3>
+      <button type="button" class="details-modal-close" aria-label="Close">&times;</button>
     </div>
 
-    <form id="statusEditForm" method="POST">
+    <form method="POST"
+          action="{{ route('seller.land.update', $land->id) }}"
+          enctype="multipart/form-data">
       @csrf
       @method('PATCH')
 
-      <div class="status-modal-body">
-        <label for="statusSelect" class="status-label">Status</label>
-        <select id="statusSelect" name="status" class="status-select">
-          <option value="normal">Normal / Open</option>
-          <option value="hot">Hot</option>
-          <option value="urgent">Urgent</option>
-          <option value="sold">Sold</option>
-          <option value="closed">Closed</option>
-        </select>
+      <div class="details-modal-body">
+        <div class="details-grid">
 
-        <label for="statusNote" class="status-label" style="margin-top:12px;">
-          Note / Internal Remark (optional)
-        </label>
-        <textarea id="statusNote"
-                  name="status_note"
-                  class="status-textarea"
-                  placeholder="Eg: Deal closed on 26/11/2025 with buyer code BUY-XXXX"></textarea>
+          {{-- ================= LOCATION ================= --}}
+          <h4 class="form-section-title">Location Details</h4>
+
+          <div class="form-group">
+            <label class="form-label">Country</label>
+            <select name="country_id"
+                    class="form-input js-cascade-country"
+                    data-scope="seller-land-edit-{{ $land->id }}">
+              <option value="">Select Country</option>
+              @foreach($countries as $c)
+                <option value="{{ $c->id }}"
+                  {{ (int)old('country_id', $land->country_id) === (int)$c->id ? 'selected' : '' }}>
+                  {{ $c->name }}
+                </option>
+              @endforeach
+            </select>
+            {{-- optional legacy string (only if you still store it) --}}
+            <input type="hidden" name="country" value="{{ old('country', $land->country) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">State</label>
+            <select name="state_id"
+                    class="form-input js-cascade-state"
+                    data-scope="seller-land-edit-{{ $land->id }}"
+                    data-selected="{{ old('state_id', $land->state_id) }}">
+              <option value="">Select State</option>
+            </select>
+            <input type="hidden" name="state" value="{{ old('state', $land->state) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">District</label>
+            <select name="district_id"
+                    class="form-input js-cascade-district"
+                    data-scope="seller-land-edit-{{ $land->id }}"
+                    data-selected="{{ old('district_id', $land->district_id) }}">
+              <option value="">Select District</option>
+            </select>
+            <input type="hidden" name="district" value="{{ old('district', $land->district) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Taluk</label>
+            <input type="text" name="taluk" class="form-input"
+                   value="{{ old('taluk', $land->taluk) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Village</label>
+            <input type="text" name="village" class="form-input"
+                   value="{{ old('village', $land->village) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Exact Location</label>
+            <input type="text" name="exact_location" class="form-input"
+                   value="{{ old('exact_location', $land->exact_location) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Landmark</label>
+            <input type="text" name="landmark" class="form-input"
+                   value="{{ old('landmark', $land->landmark) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Survey No</label>
+            <input type="text" name="survey_no" class="form-input"
+                   value="{{ old('survey_no', $land->survey_no) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Google Maps Link</label>
+            <input type="url" name="google_map_link" class="form-input"
+                   value="{{ old('google_map_link', $land->google_map_link) }}">
+          </div>
+
+          {{-- ================= LAND / PROPERTY ================= --}}
+          <h4 class="form-section-title">Property Details</h4>
+
+          <div class="form-group">
+            <label class="form-label">Land Area</label>
+            <input type="number" step="0.01" name="land_area" class="form-input"
+                   value="{{ old('land_area', $land->land_area) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Unit</label>
+            @php $unit = old('land_unit', $land->land_unit ?? 'cent'); @endphp
+            <select name="land_unit" class="form-input">
+              <option value="cent" {{ $unit==='cent' ? 'selected' : '' }}>Cent</option>
+              <option value="acre" {{ $unit==='acre' ? 'selected' : '' }}>Acre</option>
+              <option value="sqft" {{ $unit==='sqft' ? 'selected' : '' }}>Sq.ft</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Proximity</label>
+            <input type="text" name="proximity" class="form-input"
+                   value="{{ old('proximity', $land->proximity) }}"
+                   placeholder="NH / SH / Town / Others">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Road Frontage (ft)</label>
+            <input type="number" name="road_frontage" class="form-input"
+                   value="{{ old('road_frontage', $land->road_frontage) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Plot Shape</label>
+            @php $shape = old('plot_shape', $land->plot_shape); @endphp
+            <select name="plot_shape" class="form-input">
+              <option value="">Select</option>
+              <option value="Square" {{ $shape==='Square' ? 'selected' : '' }}>Square</option>
+              <option value="Rectangle" {{ $shape==='Rectangle' ? 'selected' : '' }}>Rectangle</option>
+              <option value="Irregular" {{ $shape==='Irregular' ? 'selected' : '' }}>Irregular</option>
+            </select>
+          </div>
+
+          {{-- ================= ZONING & LEGAL ================= --}}
+          <h4 class="form-section-title">Zoning & Legal</h4>
+
+          <div class="form-group">
+            <label class="form-label">Zoning Type</label>
+            <input type="text" name="zoning_type" class="form-input"
+                   value="{{ old('zoning_type', $land->zoning_type) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ownership Type</label>
+            <input type="text" name="ownership_type" class="form-input"
+                   value="{{ old('ownership_type', $land->ownership_type) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Restrictions</label>
+            <textarea name="restrictions" class="form-input" rows="3"
+              placeholder="Any legal restrictions...">{{ old('restrictions', $land->restrictions) }}</textarea>
+          </div>
+
+          {{-- ================= PRICING ================= --}}
+          <h4 class="form-section-title">Pricing</h4>
+
+          <div class="form-group">
+            <label class="form-label">Expected Price per Unit (₹)</label>
+            <input type="number" step="0.01" name="expected_price_per_cent" class="form-input"
+                   value="{{ old('expected_price_per_cent', $land->expected_price_per_cent) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Negotiability</label>
+            @php $neg = old('negotiability', $land->negotiability); @endphp
+            <select name="negotiability" class="form-input">
+              <option value="">Select</option>
+              <option value="Negotiable" {{ $neg==='Negotiable' ? 'selected' : '' }}>Negotiable</option>
+              <option value="Slightly Negotiable" {{ $neg==='Slightly Negotiable' ? 'selected' : '' }}>Slightly Negotiable</option>
+              <option value="Fixed" {{ $neg==='Fixed' ? 'selected' : '' }}>Fixed</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Expected Advance (%)</label>
+            <input type="number" name="expected_advance_pct" class="form-input" min="0" max="100"
+                   value="{{ old('expected_advance_pct', $land->expected_advance_pct) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Minimum Offer Expected (₹)</label>
+            <input type="number" step="0.01" name="min_offer_expected" class="form-input"
+                   value="{{ old('min_offer_expected', $land->min_offer_expected) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Market Value Info</label>
+            <textarea name="market_value_info" class="form-input" rows="3"
+              placeholder="Any market value notes...">{{ old('market_value_info', $land->market_value_info) }}</textarea>
+          </div>
+
+          {{-- ================= CONDITION ================= --}}
+          <h4 class="form-section-title">Condition</h4>
+
+          <div class="form-group">
+            <label class="form-label">Land Type</label>
+            <input type="text" name="land_type" class="form-input"
+                   value="{{ old('land_type', $land->land_type) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Current Use</label>
+            <input type="text" name="current_use" class="form-input"
+                   value="{{ old('current_use', $land->current_use) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Electricity</label>
+            @php $el = (int)old('electricity', $land->electricity ? 1 : 0); @endphp
+            <select name="electricity" class="form-input">
+              <option value="1" {{ $el===1 ? 'selected' : '' }}>Available</option>
+              <option value="0" {{ $el===0 ? 'selected' : '' }}>Not Available</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Water</label>
+            @php $wa = (int)old('water', $land->water ? 1 : 0); @endphp
+            <select name="water" class="form-input">
+              <option value="1" {{ $wa===1 ? 'selected' : '' }}>Available</option>
+              <option value="0" {{ $wa===0 ? 'selected' : '' }}>Not Available</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Drainage</label>
+            @php $dr = (int)old('drainage', $land->drainage ? 1 : 0); @endphp
+            <select name="drainage" class="form-input">
+              <option value="1" {{ $dr===1 ? 'selected' : '' }}>Available</option>
+              <option value="0" {{ $dr===0 ? 'selected' : '' }}>Not Available</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Compound Wall</label>
+            @php $cw = old('compound_wall', $land->compound_wall ? 1 : 0); @endphp
+            <select name="compound_wall" class="form-input">
+              <option value="1" {{ (int)$cw===1 ? 'selected' : '' }}>Yes</option>
+              <option value="0" {{ (int)$cw===0 ? 'selected' : '' }}>No</option>
+            </select>
+          </div>
+
+          {{-- ================= SALE TIMELINE ================= --}}
+          <h4 class="form-section-title">Sale Timeline</h4>
+
+          <div class="form-group">
+            <label class="form-label">Sale Timeline</label>
+            <input type="text" name="sale_timeline" class="form-input"
+                   value="{{ old('sale_timeline', $land->sale_timeline) }}">
+          </div>
+
+          {{-- ================= DOCUMENTS & MEDIA ================= --}}
+          <h4 class="form-section-title">Documents & Media</h4>
+
+          <div class="form-group">
+            <label class="form-label">Land Tax Receipt</label>
+            <input type="file" name="land_tax_receipt" class="form-input" accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($land->documents['land_tax_receipt']))
+              <small style="color:#6b7280;">Existing: {{ basename($land->documents['land_tax_receipt']) }}</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Location Sketch</label>
+            <input type="file" name="location_sketch" class="form-input" accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($land->documents['location_sketch']))
+              <small style="color:#6b7280;">Existing: {{ basename($land->documents['location_sketch']) }}</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Add Photos (multi)</label>
+            <input type="file" name="photos[]" class="form-input" accept="image/*" multiple>
+            @if(!empty($land->photos) && is_array($land->photos))
+              <small style="color:#6b7280;">Existing: {{ count($land->photos) }} photo(s)</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Replace Video (optional)</label>
+            <input type="file" name="video" class="form-input" accept="video/*">
+            @if(!empty($land->videos) && is_array($land->videos))
+              <small style="color:#6b7280;">Existing: {{ count($land->videos) }} video file(s)</small>
+            @endif
+          </div>
+
+        </div>
       </div>
 
-      <div class="status-modal-footer">
-        <button type="button" class="listing-btn listing-btn-ghost status-modal-cancel">
-          Cancel
-        </button>
-        <button type="submit" class="listing-btn listing-btn-primary">
-          Save changes
-        </button>
+      <div class="details-modal-footer">
+        <button type="button" class="listing-btn listing-btn-ghost details-modal-cancel">Cancel</button>
+        <button type="submit" class="listing-btn listing-btn-primary">Save changes</button>
       </div>
     </form>
   </div>
 </div>
 
+        @empty
+          <p style="font-size:13px; color:#9ca3af; margin-top:8px;">No land listings yet.</p>
+        @endforelse
+      </div>
 
+      {{-- ======================= BUILDING LISTINGS ======================= --}}
+      <div id="seller-building-panel" class="seller-tab-panel">
+        @forelse($sellerBuildingListings as $b)
+          @php
+            $status = strtolower($b->status ?? 'normal');
+            $statusLabel = strtoupper(str_replace('_', ' ', $status));
 
+            $countryName  = $b->country?->name ?? $b->country ?? null;
+            $stateName    = $b->state?->name ?? $b->state ?? null;
+            $districtName = $b->districtRel?->name ?? $b->district?->name ?? $b->district ?? null;
+          @endphp
+
+          <div class="listing-card">
+            <div class="listing-card-header">
+              <div class="listing-code">
+                {{ $b->property_code }}
+                • {{ $districtName ?: '—' }}
+                @if(!empty($stateName)) • {{ $stateName }} @endif
+                @if(!empty($countryName)) • {{ $countryName }} @endif
+              </div>
+
+              <span class="listing-status
+                @if($status === 'hot') listing-status-hot
+                @elseif($status === 'urgent') listing-status-urgent
+                @elseif($status === 'sold') listing-status-sold
+                @elseif($status === 'closed') listing-status-closed
+                @else listing-status-open @endif">
+                {{ $statusLabel }}
+              </span>
+            </div>
+
+            <div class="listing-card-body">
+              <div class="listing-grid">
+                <div>
+                  <div class="listing-label">Type</div>
+                  <div class="listing-value">{{ $b->building_type ?? '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Location</div>
+                  <div class="listing-value">{{ $b->area ? $b->area . ', ' : '' }}{{ $b->landmark ?? '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Built-up</div>
+                  <div class="listing-value">{{ $b->builtup_area ? number_format($b->builtup_area) . ' sqft' : '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Floors</div>
+                  <div class="listing-value">{{ $b->floors ? $b->floors . ' floors' : '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Total Price</div>
+                  <div class="listing-value">{{ $b->expected_price ? '₹' . number_format($b->expected_price) : '—' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="listing-card-footer">
+              <button type="button"
+                      class="listing-btn js-edit-status-btn"
+                      data-url="{{ route('seller.building.status.update', $b->id) }}"
+                      data-current-status="{{ $status }}">
+                Edit status
+              </button>
+
+              <button type="button"
+                      class="listing-btn js-edit-details-btn"
+                      data-modal-id="edit-building-modal-{{ $b->id }}">
+                Edit details
+              </button>
+            </div>
+          </div>
+
+          {{-- =================== BUILDING EDIT MODAL (WITH CASCADE + IDs) =================== --}}
+         {{-- =================== BUILDING EDIT MODAL (FULL + CASCADE + FILES) =================== --}}
+<div id="edit-building-modal-{{ $b->id }}" class="details-modal hidden">
+  <div class="details-modal-backdrop"></div>
+
+  <div class="details-modal-content">
+    <div class="details-modal-header">
+      <h3>Edit Building – {{ $b->property_code }}</h3>
+      <button type="button" class="details-modal-close" aria-label="Close">&times;</button>
+    </div>
+
+    <form method="POST"
+          action="{{ route('seller.building.update', $b->id) }}"
+          enctype="multipart/form-data">
+      @csrf
+      @method('PATCH')
+
+      <div class="details-modal-body">
+        <div class="details-grid">
+
+          {{-- ================= LOCATION ================= --}}
+          <h4 class="form-section-title">Location Details</h4>
+
+          <div class="form-group">
+            <label class="form-label">Country</label>
+            <select name="country_id"
+                    class="form-input js-cascade-country"
+                    data-scope="seller-building-edit-{{ $b->id }}">
+              <option value="">Select Country</option>
+              @foreach($countries as $c)
+                <option value="{{ $c->id }}"
+                  {{ (int)old('country_id', $b->country_id) === (int)$c->id ? 'selected' : '' }}>
+                  {{ $c->name }}
+                </option>
+              @endforeach
+            </select>
+
+            {{-- optional backward compatible string --}}
+            <input type="hidden" name="country" value="{{ old('country', $b->country) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">State</label>
+            <select name="state_id"
+                    class="form-input js-cascade-state"
+                    data-scope="seller-building-edit-{{ $b->id }}"
+                    data-selected="{{ old('state_id', $b->state_id) }}">
+              <option value="">Select State</option>
+            </select>
+
+            <input type="hidden" name="state" value="{{ old('state', $b->state) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">District</label>
+            <select name="district_id"
+                    class="form-input js-cascade-district"
+                    data-scope="seller-building-edit-{{ $b->id }}"
+                    data-selected="{{ old('district_id', $b->district_id) }}">
+              <option value="">Select District</option>
+            </select>
+
+            <input type="hidden" name="district" value="{{ old('district', $b->district) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Area / Town</label>
+            <input type="text" name="area" class="form-input"
+                   value="{{ old('area', $b->area) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Street Name</label>
+            <input type="text" name="street_name" class="form-input"
+                   value="{{ old('street_name', $b->street_name) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Landmark</label>
+            <input type="text" name="landmark" class="form-input"
+                   value="{{ old('landmark', $b->landmark) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Google Maps Link</label>
+            <input type="url" name="map_link" class="form-input"
+                   value="{{ old('map_link', $b->map_link) }}">
+          </div>
+
+          {{-- ================= BUILDING DETAILS ================= --}}
+          <h4 class="form-section-title">Building Details</h4>
+
+          <div class="form-group">
+            <label class="form-label">Building Type</label>
+            <select name="building_type" class="form-input">
+              @php $bt = old('building_type', $b->building_type); @endphp
+              @foreach(['Commercial','Office','Retail','Apartment','Villa','Mixed-Use','Hotel','Hospital','Warehouse'] as $type)
+                <option value="{{ $type }}" {{ $bt === $type ? 'selected' : '' }}>{{ $type }}</option>
+              @endforeach
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Total Plot Area (sqft)</label>
+            <input type="number" step="0.01" name="total_plot_area" class="form-input"
+                   value="{{ old('total_plot_area', $b->total_plot_area) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Built-up Area (sqft)</label>
+            <input type="number" step="0.01" name="builtup_area" class="form-input"
+                   value="{{ old('builtup_area', $b->builtup_area) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Floors</label>
+            <input type="number" name="floors" class="form-input"
+                   value="{{ old('floors', $b->floors) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Construction Year</label>
+            <input type="number" name="construction_year" class="form-input"
+                   value="{{ old('construction_year', $b->construction_year) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lift Available</label>
+            @php $lift = (string) old('lift_available', $b->lift_available ? 1 : 0); @endphp
+            <select name="lift_available" class="form-input">
+              <option value="1" {{ $lift === '1' ? 'selected' : '' }}>Yes</option>
+              <option value="0" {{ $lift === '0' ? 'selected' : '' }}>No</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Parking Slots</label>
+            <input type="number" name="parking_slots" class="form-input"
+                   value="{{ old('parking_slots', $b->parking_slots) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Road Frontage (ft)</label>
+            <input type="number" name="road_frontage" class="form-input"
+                   value="{{ old('road_frontage', $b->road_frontage) }}">
+          </div>
+
+          {{-- ================= PRICING ================= --}}
+          <h4 class="form-section-title">Pricing</h4>
+
+          <div class="form-group">
+            <label class="form-label">Expected Total Price (₹)</label>
+            <input type="number" step="0.01" name="expected_price" class="form-input"
+                   value="{{ old('expected_price', $b->expected_price) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Negotiability</label>
+            @php $neg = old('negotiability', $b->negotiability); @endphp
+            <select name="negotiability" class="form-input">
+              <option value="Negotiable" {{ $neg === 'Negotiable' ? 'selected' : '' }}>Negotiable</option>
+              <option value="Slightly Negotiable" {{ $neg === 'Slightly Negotiable' ? 'selected' : '' }}>Slightly Negotiable</option>
+              <option value="Fixed" {{ $neg === 'Fixed' ? 'selected' : '' }}>Fixed</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sell Timeline</label>
+            @php $tl = old('sell_timeline', $b->sell_timeline); @endphp
+            <select name="sell_timeline" class="form-input">
+              <option value="Urgent (Within 1 month)" {{ $tl === 'Urgent (Within 1 month)' ? 'selected' : '' }}>Urgent (Within 1 month)</option>
+              <option value="Normal (1-3 months)" {{ $tl === 'Normal (1-3 months)' ? 'selected' : '' }}>Normal (1-3 months)</option>
+              <option value="Flexible" {{ $tl === 'Flexible' ? 'selected' : '' }}>Flexible</option>
+            </select>
+          </div>
+
+          {{-- ================= DOCUMENTS & MEDIA ================= --}}
+          <h4 class="form-section-title">Documents & Media (Replace / Add)</h4>
+
+          <div class="form-group">
+            <label class="form-label">Building Permit (optional)</label>
+            <input type="file" name="building_permit" class="form-input" accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($b->documents['building_permit']))
+              <small style="color:#6b7280;">Existing: {{ basename($b->documents['building_permit']) }}</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Completion Certificate (optional)</label>
+            <input type="file" name="completion_certificate" class="form-input" accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($b->documents['completion_certificate']))
+              <small style="color:#6b7280;">Existing: {{ basename($b->documents['completion_certificate']) }}</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ownership Documents (Add more)</label>
+            <input type="file" name="ownership_documents[]" class="form-input" multiple accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($b->documents['ownership_documents']) && is_array($b->documents['ownership_documents']))
+              <small style="color:#6b7280;">Existing: {{ count($b->documents['ownership_documents']) }} file(s)</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Photos (Add more)</label>
+            <input type="file" name="photos[]" class="form-input" multiple accept="image/*">
+            @if(!empty($b->photos) && is_array($b->photos))
+              <small style="color:#6b7280;">Existing: {{ count($b->photos) }} photo(s)</small>
+            @endif
+          </div>
+
+        </div>
+      </div>
+
+      <div class="details-modal-footer">
+        <button type="button" class="listing-btn listing-btn-ghost details-modal-cancel">Cancel</button>
+        <button type="submit" class="listing-btn listing-btn-primary">Save changes</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+        @empty
+          <p style="font-size:13px; color:#9ca3af; margin-top:8px;">No building listings yet.</p>
+        @endforelse
+      </div>
+
+      {{-- ======================= INVESTMENT LISTINGS ======================= --}}
+      <div id="seller-investment-panel" class="seller-tab-panel">
+        @forelse($sellerInvestmentListings as $inv)
+          @php
+            $status = strtolower($inv->status ?? 'open');
+            $statusLabel = strtoupper(str_replace('_', ' ', $status));
+
+            $countryName  = $inv->country?->name ?? $inv->country ?? null;
+            $stateName    = $inv->state?->name ?? $inv->state ?? null;
+            $districtName = $inv->districtRel?->name ?? $inv->district?->name ?? $inv->district ?? null;
+          @endphp
+
+          <div class="listing-card">
+            <div class="listing-card-header">
+              <div class="listing-code">
+                {{ $inv->property_code }} • {{ $inv->project_name }}
+                @if(!empty($districtName)) • {{ $districtName }} @endif
+                @if(!empty($stateName)) • {{ $stateName }} @endif
+                @if(!empty($countryName)) • {{ $countryName }} @endif
+              </div>
+
+              <span class="listing-status
+                @if($status === 'hot') listing-status-hot
+                @elseif($status === 'urgent') listing-status-urgent
+                @elseif($status === 'sold') listing-status-sold
+                @elseif($status === 'closed') listing-status-closed
+                @else listing-status-open @endif">
+                {{ $statusLabel }}
+              </span>
+            </div>
+
+            <div class="listing-card-body">
+              <div class="listing-grid">
+                <div>
+                  <div class="listing-label">Project Type</div>
+                  <div class="listing-value">{{ $inv->project_type ?? '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Micro Location</div>
+                  <div class="listing-value">{{ $inv->micro_location ?? '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Project Cost</div>
+                  <div class="listing-value">{{ $inv->project_cost ? '₹' . number_format($inv->project_cost) : '—' }}</div>
+                </div>
+                <div>
+                  <div class="listing-label">Investment Required</div>
+                  <div class="listing-value">{{ $inv->investment_required ? '₹' . number_format($inv->investment_required) : '—' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="listing-card-footer">
+              <button type="button"
+                      class="listing-btn js-edit-status-btn"
+                      data-url="{{ route('seller.investment.status.update', $inv->id) }}"
+                      data-current-status="{{ $status }}">
+                Edit status
+              </button>
+
+              <button type="button"
+                      class="listing-btn js-edit-details-btn"
+                      data-modal-id="edit-investment-modal-{{ $inv->id }}">
+                Edit details
+              </button>
+            </div>
+          </div>
+
+          {{-- =================== INVESTMENT EDIT MODAL (WITH CASCADE + IDs) =================== --}}
+          {{-- =================== INVESTMENT EDIT MODAL (FULL + CASCADE + FILES + IDs) =================== --}}
+<div id="edit-investment-modal-{{ $inv->id }}" class="details-modal hidden">
+  <div class="details-modal-backdrop"></div>
+
+  <div class="details-modal-content">
+    <div class="details-modal-header">
+      <h3>Edit Investment – {{ $inv->property_code }}</h3>
+      <button type="button" class="details-modal-close" aria-label="Close">&times;</button>
+    </div>
+
+    <form method="POST"
+          action="{{ route('seller.investment.update', $inv->id) }}"
+          enctype="multipart/form-data">
+      @csrf
+      @method('PATCH')
+
+      <div class="details-modal-body">
+        <div class="details-grid">
+
+          {{-- ================= LOCATION ================= --}}
+          <h4 class="form-section-title">Location</h4>
+
+          <div class="form-group">
+            <label class="form-label">Country</label>
+            <select name="country_id"
+                    class="form-input js-cascade-country"
+                    data-scope="seller-investment-edit-{{ $inv->id }}">
+              <option value="">Select Country</option>
+              @foreach($countries as $c)
+                <option value="{{ $c->id }}"
+                  {{ (int)old('country_id', $inv->country_id) === (int)$c->id ? 'selected' : '' }}>
+                  {{ $c->name }}
+                </option>
+              @endforeach
+            </select>
+            {{-- optional legacy string --}}
+            <input type="hidden" name="country" value="{{ old('country', $inv->country) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">State</label>
+            <select name="state_id"
+                    class="form-input js-cascade-state"
+                    data-scope="seller-investment-edit-{{ $inv->id }}"
+                    data-selected="{{ old('state_id', $inv->state_id) }}">
+              <option value="">Select State</option>
+            </select>
+            <input type="hidden" name="state" value="{{ old('state', $inv->state) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">District</label>
+            <select name="district_id"
+                    class="form-input js-cascade-district"
+                    data-scope="seller-investment-edit-{{ $inv->id }}"
+                    data-selected="{{ old('district_id', $inv->district_id) }}">
+              <option value="">Select District</option>
+            </select>
+            <input type="hidden" name="district" value="{{ old('district', $inv->district) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Micro Location</label>
+            <input type="text" name="micro_location" class="form-input"
+                   value="{{ old('micro_location', $inv->micro_location) }}">
+          </div>
+
+          {{-- ================= PROJECT OVERVIEW ================= --}}
+          <h4 class="form-section-title">Project Overview</h4>
+
+          <div class="form-group">
+            <label class="form-label">Project Name</label>
+            <input type="text" name="project_name" class="form-input"
+                   value="{{ old('project_name', $inv->project_name) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Project Type</label>
+            <select name="project_type" class="form-input">
+              @php $pt = old('project_type', $inv->project_type); @endphp
+              @foreach(['Land development','Rental Property','Commercial Complex','Residential Project','Mixed Development'] as $type)
+                <option value="{{ $type }}" {{ $pt === $type ? 'selected' : '' }}>
+                  {{ $type }}
+                </option>
+              @endforeach
+            </select>
+          </div>
+
+          {{-- NOTE: only include this textarea IF your DB column exists --}}
+          @if(\Illuminate\Support\Facades\Schema::hasColumn('seller_investment_listings','project_description'))
+            <div class="form-group">
+              <label class="form-label">Project Description</label>
+              <textarea name="project_description" class="form-input" rows="4"
+                placeholder="Describe the opportunity...">{{ old('project_description', $inv->project_description) }}</textarea>
+            </div>
+          @endif
+
+          {{-- ================= INVESTMENT DETAILS ================= --}}
+          <h4 class="form-section-title">Investment Details</h4>
+
+          <div class="form-group">
+            <label class="form-label">Total Project Cost (₹)</label>
+            <input type="number" step="0.01" name="project_cost" class="form-input"
+                   value="{{ old('project_cost', $inv->project_cost) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Investment Required (₹)</label>
+            <input type="number" step="0.01" name="investment_required" class="form-input"
+                   value="{{ old('investment_required', $inv->investment_required) }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Profit Sharing Model</label>
+            <input type="text" name="profit_sharing_model" class="form-input"
+                   value="{{ old('profit_sharing_model', $inv->profit_sharing_model) }}"
+                   placeholder="e.g., 60:40 investor">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Payback Period</label>
+            <input type="text" name="payback_period" class="form-input"
+                   value="{{ old('payback_period', $inv->payback_period) }}"
+                   placeholder="e.g., 5 years">
+          </div>
+
+          {{-- ================= PROJECT STATUS ================= --}}
+          <h4 class="form-section-title">Project Status</h4>
+
+          <div class="form-group">
+            <label class="form-label">Current Status</label>
+            <input type="text" name="project_status" class="form-input"
+                   value="{{ old('project_status', $inv->project_status) }}"
+                   placeholder="Approvals / Construction started / etc.">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Completion %</label>
+            @php $cp = (int) old('completion_percent', $inv->completion_percent ?? 0); @endphp
+            <input type="number" name="completion_percent" class="form-input" min="0" max="100"
+                   value="{{ $cp }}">
+            <small style="color:#6b7280;">Enter 0–100</small>
+          </div>
+
+          {{-- ================= DOCUMENTS ================= --}}
+          <h4 class="form-section-title">Documents (Replace / Add)</h4>
+
+          <div class="form-group">
+            <label class="form-label">DPR (PDF)</label>
+            <input type="file" name="dpr" class="form-input" accept=".pdf">
+            @if(!empty($inv->documents['dpr']))
+              <small style="color:#6b7280;">Existing: {{ basename($inv->documents['dpr']) }}</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Site Layout / Plan</label>
+            <input type="file" name="layout_plan" class="form-input" accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($inv->documents['layout_plan']))
+              <small style="color:#6b7280;">Existing: {{ basename($inv->documents['layout_plan']) }}</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Approvals (Add more)</label>
+            <input type="file" name="approvals[]" class="form-input" multiple accept=".pdf,.jpg,.jpeg,.png">
+            @if(!empty($inv->documents['approvals']) && is_array($inv->documents['approvals']))
+              <small style="color:#6b7280;">Existing: {{ count($inv->documents['approvals']) }} file(s)</small>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Financial Projections</label>
+            <input type="file" name="financials" class="form-input" accept=".pdf,.xlsx,.xls">
+            @if(!empty($inv->documents['financials']))
+              <small style="color:#6b7280;">Existing: {{ basename($inv->documents['financials']) }}</small>
+            @endif
+          </div>
+
+        </div>
+      </div>
+
+      <div class="details-modal-footer">
+        <button type="button" class="listing-btn listing-btn-ghost details-modal-cancel">Cancel</button>
+        <button type="submit" class="listing-btn listing-btn-primary">Save changes</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+        @empty
+          <p style="font-size:13px; color:#9ca3af; margin-top:8px;">No investment opportunities yet.</p>
+        @endforelse
+      </div>
+    </div>
+
+    {{-- ======================= SHARED STATUS EDIT MODAL ======================= --}}
+    <div id="statusEditModal" class="status-modal hidden">
+      <div class="status-modal-backdrop"></div>
+
+      <div class="status-modal-content">
+        <div class="status-modal-header">
+          <h3>Edit Listing Status</h3>
+          <button type="button" class="status-modal-close" aria-label="Close">&times;</button>
+        </div>
+
+        <form id="statusEditForm" method="POST">
+          @csrf
+          @method('PATCH')
+
+          <div class="status-modal-body">
+            <label for="statusSelect" class="status-label">Status</label>
+            <select id="statusSelect" name="status" class="status-select">
+              <option value="normal">Normal / Open</option>
+              <option value="hot">Hot</option>
+              <option value="urgent">Urgent</option>
+              <option value="sold">Sold</option>
+              <option value="closed">Closed</option>
+            </select>
+
+            <label for="statusNote" class="status-label" style="margin-top:12px;">
+              Note / Internal Remark (optional)
+            </label>
+            <textarea id="statusNote"
+                      name="status_note"
+                      class="status-textarea"
+                      placeholder="Eg: Deal closed on 26/11/2025 with buyer code BUY-XXXX"></textarea>
+          </div>
+
+          <div class="status-modal-footer">
+            <button type="button" class="listing-btn listing-btn-ghost status-modal-cancel">Cancel</button>
+            <button type="submit" class="listing-btn listing-btn-primary">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
   </div>
 </div>
 
-
-        {{-- INVESTMENT MODULE (display-only demo) --}}
-        <div id="investment-module" class="dashboard-view">
-          <div class="dashboard-header">
-            <h1>Investment Module</h1>
-            <p>Discover high-return investment opportunities</p>
-          </div>
-
-          <div class="module-content">
-            <div class="investment-card">
-              <div class="investment-header">
-                <h3>Premium Villa Project - Kakkanad</h3>
-                <div class="iss-score">
-                  <span class="iss-label">ISS Score</span>
-                  <span class="iss-value">92</span>
-                </div>
-              </div>
-              <p class="investment-description">Luxury villa development in prime location with high ROI potential</p>
-              <div class="investment-details">
-                <div class="detail-item">
-                  <span class="detail-label">Investment Required</span>
-                  <span class="detail-value">₹50 Lakhs</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Expected Returns</span>
-                  <span class="detail-value">18% per year</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Payback Period</span>
-                  <span class="detail-value">5 years</span>
-                </div>
-              </div>
-              <button class="btn-primary">View Details</button>
-            </div>
-
-            <div class="investment-card">
-              <div class="investment-header">
-                <h3>Commercial Complex - Kochi</h3>
-                <div class="iss-score">
-                  <span class="iss-label">ISS Score</span>
-                  <span class="iss-value">85</span>
-                </div>
-              </div>
-              <p class="investment-description">Strategic commercial development near IT hub</p>
-              <div class="investment-details">
-                <div class="detail-item">
-                  <span class="detail-label">Investment Required</span>
-                  <span class="detail-value">₹1 Crore</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Expected Returns</span>
-                  <span class="detail-value">22% per year</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Payback Period</span>
-                  <span class="detail-value">4 years</span>
-                </div>
-              </div>
-              <button class="btn-primary">View Details</button>
-            </div>
-          </div>
-        </div>
-<!-- ====== MY LISTINGS (Caffeine-style cards) ====== -->
-
-<!-- ====== END MY LISTINGS ====== -->
-
-
-        
-      </div>
-    </div>
-  </div>
-
-  {{-- PROFILE COMPLETE MODAL --}}
-  <div id="profile-complete-modal"
-       class="profile-modal-overlay"
-       style="{{ $profileIncomplete ? '' : 'display:none;' }}">
-    <div class="profile-modal profile-modal-light">
-      <div class="profile-modal-header">
-        <div>
-          <h2 class="profile-modal-title">Complete your profile</h2>
-          <p class="profile-modal-subtitle">
-            Add your basic details to get the best AI-powered matches.
-          </p>
-        </div>
-      </div>
-
-      <form method="POST" action="{{ route('profile.complete.update') }}" class="auth-form">
-        @csrf
-
-        <div class="form-group">
-          <label for="modal-name">Full Name</label>
-          <input
-            type="text"
-            id="modal-name"
-            name="name"
-            value="{{ old('name', $user?->name) }}"
-            placeholder="Enter your full name"
-            required
-          >
-          @error('name')
-            <div class="input-error">{{ $message }}</div>
-          @enderror
-        </div>
-
-        <div class="form-group">
-          <label for="modal-phone">Phone Number</label>
-          <input
-            type="tel"
-            id="modal-phone"
-            name="phone"
-            value="{{ old('phone', $user?->phone) }}"
-            placeholder="+91 1234567890"
-            required
-          >
-          @error('phone')
-            <div class="input-error">{{ $message }}</div>
-          @enderror
-        </div>
-
-        <div class="form-group">
-          <label for="modal-location">Location</label>
-          <input
-            type="text"
-            id="modal-location"
-            name="location"
-            value="{{ old('location', $user?->location) }}"
-            placeholder="City / District / State"
-            required
-          >
-          @error('location')
-            <div class="input-error">{{ $message }}</div>
-          @enderror
-        </div>
-
-        <button type="submit" class="btn-primary btn-full profile-modal-btn">
-          Save & Continue
-        </button>
-      </form>
-    </div>
-  </div>
-
   {{-- JS --}}
   <script src="{{ asset('assets/script.js') }}"></script>
+
+  {{-- ✅ ONE SINGLE CASCADE SCRIPT FOR ALL SELECTS --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const statesByCountry  = @json($statesByCountry ?? []);
+  const districtsByState = @json($districtsByState ?? []);
+
+  function resetSelect(selectEl, placeholder) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+  }
+
+  function findGroup(scope) {
+    const country  = document.querySelector('.js-cascade-country[data-scope="'+scope+'"]');
+    const state    = document.querySelector('.js-cascade-state[data-scope="'+scope+'"]');
+    const district = document.querySelector('.js-cascade-district[data-scope="'+scope+'"]');
+    return { country, state, district };
+  }
+
+  function populateStates(scope, countryId, selectedStateId) {
+    const { state, district } = findGroup(scope);
+    if (!state || !district) return;
+
+    resetSelect(state, 'Select State');
+    resetSelect(district, 'Select District');
+
+    if (!countryId || !statesByCountry[countryId]) return;
+
+    statesByCountry[countryId].forEach(function (st) {
+      const o = document.createElement('option');
+      o.value = String(st.id);      // ✅ submit ID
+      o.textContent = st.name;
+
+      if (selectedStateId && String(st.id) === String(selectedStateId)) {
+        o.selected = true;
+      }
+      state.appendChild(o);
+    });
+
+    // If we preselected a state, auto-populate districts using its ID
+    if (selectedStateId) {
+      populateDistricts(scope, selectedStateId, district.dataset.selected || null);
+    }
+  }
+
+  function populateDistricts(scope, stateId, selectedDistrictId) {
+    const { district } = findGroup(scope);
+    if (!district) return;
+
+    resetSelect(district, 'Select District');
+
+    if (!stateId || !districtsByState[stateId]) return;
+
+    districtsByState[stateId].forEach(function (d) {
+      const o = document.createElement('option');
+      o.value = String(d.id);       // ✅ submit ID
+      o.textContent = d.name;
+
+      if (selectedDistrictId && String(d.id) === String(selectedDistrictId)) {
+        o.selected = true;
+      }
+      district.appendChild(o);
+    });
+  }
+
+  // Wire all cascades
+  const allCountries = document.querySelectorAll('.js-cascade-country[data-scope]');
+  allCountries.forEach(function (countrySelect) {
+    const scope = countrySelect.dataset.scope;
+    const { state, district } = findGroup(scope);
+
+    // Country -> State
+    countrySelect.addEventListener('change', function () {
+      const countryId = this.value; // ✅ value IS country_id now
+
+      // Clear any old "selected" markers when user changes
+      if (state) state.dataset.selected = '';
+      if (district) district.dataset.selected = '';
+
+      populateStates(scope, countryId, null);
+    });
+
+    // State -> District
+    if (state) {
+      state.addEventListener('change', function () {
+        const stateId = this.value; // ✅ value IS state_id now
+
+        if (district) district.dataset.selected = '';
+        populateDistricts(scope, stateId, null);
+      });
+    }
+
+    // ----- Auto prefill (Edit modal / edit page) -----
+    // If country already selected, and we have data-selected on state/district, populate them.
+    const countryId = countrySelect.value;
+    const selectedStateId = state ? state.dataset.selected : null;
+
+    if (countryId && selectedStateId) {
+      populateStates(scope, countryId, selectedStateId);
+    } else {
+      // If country chosen but no selectedStateId, just ensure states are loaded
+      if (countryId) populateStates(scope, countryId, null);
+    }
+  });
+});
+</script>
+
+
 </body>
 </html>

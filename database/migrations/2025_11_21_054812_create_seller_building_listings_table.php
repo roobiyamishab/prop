@@ -19,7 +19,7 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
-            // 🔹 Admin who created the listing (nullable)
+            // Admin who created the listing (nullable)
             $table->unsignedBigInteger('created_by_admin_id')->nullable();
 
             $table->string('property_code', 20)->unique(); // BLD100, HOS100, HTL100, etc.
@@ -28,8 +28,16 @@ return new class extends Migration
             $table->enum('status', ['normal', 'hot', 'urgent', 'sold', 'booked', 'off_market'])
                   ->default('normal');
 
-            // Location
-            $table->string('district', 120);
+            /* =========================
+             * ✅ NEW: Location hierarchy IDs
+             * (matches your Country/State/City package tables)
+             * ========================= */
+            $table->unsignedBigInteger('country_id')->nullable()->index();
+            $table->unsignedBigInteger('state_id')->nullable()->index();
+            $table->unsignedBigInteger('district_id')->nullable()->index(); // city/district id
+
+            // Location (old + extra)
+            $table->string('district', 120)->nullable(); // made nullable (because district_id can be used)
             $table->string('area', 120)->nullable();
             $table->string('street_name', 255)->nullable();
             $table->string('landmark', 255)->nullable();
@@ -56,16 +64,18 @@ return new class extends Migration
             $table->string('negotiability', 100)->nullable();
             $table->integer('expected_advance_pct')->nullable();
 
-            // Documents
-            $table->json('documents')->nullable(); // permit, completion, ownership, etc.
-            $table->json('photos')->nullable(); 
+            // Documents / media
+            $table->json('documents')->nullable();
+            $table->json('photos')->nullable();
 
             // Timeline
             $table->string('sell_timeline', 100)->nullable();
 
             $table->timestamps();
 
+            // Existing index + improved index for new IDs
             $table->index(['district', 'building_type']);
+            $table->index(['country_id', 'state_id', 'district_id', 'building_type'], 'seller_building_loc_type_idx');
         });
     }
 

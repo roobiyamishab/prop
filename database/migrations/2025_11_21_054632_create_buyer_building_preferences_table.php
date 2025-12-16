@@ -11,46 +11,64 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('buyer_building_preferences', function (Blueprint $table) {
-    $table->bigIncrements('id');
+        Schema::create('buyer_building_preferences', function (Blueprint $table) {
+            $table->bigIncrements('id');
 
-    // Link to users table (buyer)
-    $table->foreignId('user_id')
-          ->constrained('users')
-          ->cascadeOnDelete();
+            // Link to users table (buyer)
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
 
-    // 🔹 Status of this building requirement
-    $table->enum('status', ['active', 'urgent', 'completed'])
-          ->default('active');
+            // Status of this building requirement
+            $table->enum('status', ['active', 'urgent', 'completed'])
+                  ->default('active');
 
-    $table->json('preferred_districts')->nullable();
+            /*
+             * Location hierarchy (same pattern as buyer_land_preferences)
+             * Store arrays of IDs (from your countries / states / cities tables):
+             *   preferred_countries => [1, 101]
+             *   preferred_states    => [501, 502]
+             *   preferred_districts => [9001, 9002]   // city/district IDs
+             */
+            $table->json('preferred_countries')->nullable();
+            $table->json('preferred_states')->nullable();
+            $table->json('preferred_districts')->nullable();
 
-    $table->string('building_type', 120)->nullable(); // Hospital, Hotel, Office, etc.
+            // Optional: extra text-based / micro areas
+            $table->json('micro_locations')->nullable();
 
-    $table->integer('area_min')->nullable();          // sqft
-    $table->integer('area_max')->nullable();
-    $table->integer('exact_area')->nullable();
+            // Building type – Hospital, Hotel, Office, etc.
+            $table->string('building_type', 120)->nullable();
 
-    $table->integer('frontage_min')->nullable();      // feet
+            // Built-up area (sqft)
+            $table->integer('area_min')->nullable();
+            $table->integer('area_max')->nullable();
+            $table->integer('exact_area')->nullable();
 
-    $table->string('age_preference', 100)->nullable(); // New, <5 years, etc.
+            // Frontage (ft)
+            $table->integer('frontage_min')->nullable();
 
-    $table->decimal('total_budget_min', 14, 2)->nullable();
-    $table->decimal('total_budget_max', 14, 2)->nullable();
+            // Age of building acceptable – "New", "5–10 years", etc.
+            $table->string('age_preference', 100)->nullable();
 
-    $table->json('micro_locations')->nullable();
-    $table->string('distance_requirement', 200)->nullable();
+            // Budget range
+            $table->decimal('total_budget_min', 14, 2)->nullable();
+            $table->decimal('total_budget_max', 14, 2)->nullable();
 
-    $table->decimal('rent_expectation', 14, 2)->nullable(); // if buyer wants rental yield
+            // Distance requirements (comma-separated flags like nearHighway, nearITPark, etc.)
+            $table->string('distance_requirement', 200)->nullable();
 
-    // 🔹 Super admin who created this requirement
-    $table->unsignedBigInteger('created_by_admin_id')->nullable();
-    // or, if you have an admins table and want FK:
-    // $table->foreignId('created_by_admin_id')->nullable()->constrained('admins')->nullOnDelete();
+            // Rent expectation (if looking for rental asset)
+            $table->decimal('rent_expectation', 14, 2)->nullable();
 
-    $table->timestamps();
-});
+            // Super admin who created this requirement (optional)
+            $table->foreignId('created_by_admin_id')
+                  ->nullable()
+                  ->constrained('admins')
+                  ->nullOnDelete();
 
+            $table->timestamps();
+        });
     }
 
     /**

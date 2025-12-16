@@ -13,9 +13,16 @@ class BuyerBuildingPreference extends Model
 
     protected $fillable = [
         'user_id',
+
+        // 🔹 location hierarchy
+        'preferred_countries',
+        'preferred_states',
         'preferred_districts',
+
+        // existing fields
+        'preferred_districts',   // keep for backward compatibility if you were using it
         'building_type',
-        'status', 
+        'status',
         'area_min',
         'area_max',
         'exact_area',
@@ -30,8 +37,11 @@ class BuyerBuildingPreference extends Model
     ];
 
     protected $casts = [
+        'preferred_countries' => 'array',
+        'preferred_states'    => 'array',
         'preferred_districts' => 'array',
         'micro_locations'     => 'array',
+
         'total_budget_min'    => 'decimal:2',
         'total_budget_max'    => 'decimal:2',
         'rent_expectation'    => 'decimal:2',
@@ -41,7 +51,8 @@ class BuyerBuildingPreference extends Model
     {
         return $this->belongsTo(User::class);
     }
-      public function createdByAdmin()
+
+    public function createdByAdmin()
     {
         return $this->belongsTo(Admin::class, 'created_by_admin_id');
     }

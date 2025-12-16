@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Http\Controllers\Controller; 
-
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
 use App\Models\BuyerLandPreference;
 use App\Models\BuyerBuildingPreference;
 use App\Models\BuyerInvestmentPreference;
 use App\Models\SellerLandListing;
 use App\Models\SellerBuildingListing;
 use App\Models\SellerInvestmentListing;
+
+// 🔹 NEW: location models
+use App\Models\Country;
+use App\Models\State;
+use App\Models\City;
 
 class DashboardController extends Controller
 {
@@ -37,6 +42,12 @@ class DashboardController extends Controller
         $sellerInvestmentListings = SellerInvestmentListing::where('user_id', $user->id)
             ->latest()->take(2)->get();
 
+        // 🔹 NEW: country / state / city for dropdowns in buyer module
+        $countries = Country::orderBy('name')->get();
+        $states    = State::orderBy('name')->get();
+        $cities    = City::orderBy('name')->get();   // can be treated as districts
+
+      
         return view('dashboard', compact(
             'user',
             'buyerLand',
@@ -44,7 +55,10 @@ class DashboardController extends Controller
             'buyerInvestment',
             'sellerLandListings',
             'sellerBuildingListings',
-            'sellerInvestmentListings'
+            'sellerInvestmentListings',
+            'countries',
+            'states',
+            'cities',
         ));
     }
 }

@@ -19,17 +19,25 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
-            // 🔹 Status of this investment requirement
-            // active    = currently looking for this investment
-            // urgent    = high-priority requirement
-            // completed = deal closed / requirement fulfilled
+            // Status of this investment requirement
             $table->enum('status', ['active', 'urgent', 'completed'])
                   ->default('active');
 
+            /*
+             * Location hierarchy (same pattern as land / building)
+             *
+             * preferred_countries => ["India", "UAE"]
+             * preferred_states    => ["Kerala"]
+             * preferred_districts => ["Ernakulam", "Kozhikode"]
+             */
+            $table->json('preferred_countries')->nullable();
+            $table->json('preferred_states')->nullable();
             $table->json('preferred_districts')->nullable();
+
+            // More granular free-text micro-locations
             $table->json('preferred_locations')->nullable();
 
-            // Land / Rental buildings / Villas / Flats / Hospital / Any other
+            // Land / Rental buildings / Villas / Flats / Hospital / Any
             $table->string('investment_property_type', 150)->nullable();
 
             $table->decimal('investment_budget_min', 14, 2)->nullable();
@@ -37,9 +45,9 @@ return new class extends Migration
 
             $table->decimal('profit_expectation_year', 14, 2)->nullable(); // expected profit/year
 
-            // 🔹 Super admin who created this investment requirement
+            // Super admin who created this investment requirement
             $table->unsignedBigInteger('created_by_admin_id')->nullable();
-            // or if you have an `admins` table and want FK:
+            // Or FK:
             // $table->foreignId('created_by_admin_id')->nullable()->constrained('admins')->nullOnDelete();
 
             $table->timestamps();

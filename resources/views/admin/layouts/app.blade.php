@@ -24,7 +24,7 @@
 
 <body>
   <div id="app">
-    <div id="dashboard-page" class="page dashboard-page">
+    <div id="dashboard-page" class="dashboard-page">
       
       {{-- SIDEBAR --}}
       <div class="dashboard-sidebar">
@@ -33,22 +33,44 @@
         </div>
 
         <nav class="sidebar-nav">
-          <a href="javascript:void(0)" class="sidebar-item active" onclick="showDashboardView('dashboard-home')">
+          {{-- Dashboard Home --}}
+          <a href="{{ route('admin.dashboard', ['tab' => 'home']) }}"
+             class="sidebar-item {{ request()->routeIs('admin.dashboard') && request('tab', 'home') === 'home' ? 'active' : '' }}">
             <span class="sidebar-icon">🏠</span>
             <span>Dashboard Home</span>
           </a>
-          <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('buyer-module')">
+
+          {{-- Buyer Module – go to dashboard buyer tab --}}
+          <a href="{{ route('admin.dashboard', ['tab' => 'buyer']) }}"
+             class="sidebar-item {{ request()->routeIs('admin.dashboard') && request('tab') === 'buyer' ? 'active' : '' }}">
             <span class="sidebar-icon">🔍</span>
             <span>Buyer Module</span>
           </a>
-          <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('seller-module')">
-            <span class="sidebar-icon">📋</span>
-            <span>Seller Module</span>
-          </a>
-          <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('investment-module')">
-            <span class="sidebar-icon">💰</span>
-            <span>Investment Module</span>
-          </a>
+
+          {{-- Seller Module – adjust route when you have it --}}
+         
+           {{-- Seller Module --}}
+{{-- Seller Module --}}
+{{-- Seller Module --}}
+<a href="{{ route('admin.dashboard', ['tab' => 'seller']) }}"
+   class="sidebar-item {{ request()->routeIs('admin.dashboard') && request('tab') === 'seller' ? 'active' : '' }}">
+  <span class="sidebar-icon">📋</span>
+  <span>Seller Module</span>
+</a>
+
+  {{-- Investment Module – adjust route when you have it --}}
+          <!-- @if (Route::has('admin.investments.index'))
+            <a href="{{ route('admin.investments.index') }}"
+               class="sidebar-item {{ request()->routeIs('admin.investments.*') ? 'active' : '' }}">
+              <span class="sidebar-icon">💰</span>
+              <span>Investment Module</span>
+            </a>
+          @else
+            <a href="javascript:void(0)" class="sidebar-item">
+              <span class="sidebar-icon">💰</span>
+              <span>Investment Module</span>
+            </a>
+          @endif -->
 
           <div class="sidebar-divider"></div>
 
@@ -71,9 +93,6 @@
 
     </div>
   </div>
-
-  {{-- Global JS (if any) --}}
-  {{-- <script src="{{ asset('assets/app.js') }}"></script> --}}
 
   {{-- Page-specific scripts --}}
   @stack('scripts')

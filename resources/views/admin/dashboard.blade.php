@@ -41,10 +41,10 @@
             <span class="sidebar-icon">📋</span>
             <span>Seller Module</span>
           </a>
-          <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('investment-module')">
+          <!-- <a href="javascript:void(0)" class="sidebar-item" onclick="showDashboardView('investment-module')">
             <span class="sidebar-icon">💰</span>
             <span>Investment Module</span>
-          </a>
+          </a> -->
 
           <div class="sidebar-divider"></div>
 
@@ -394,7 +394,7 @@
             </div>
        {{-- ALL PROPERTIES LINK CARD --}}
 <div class="accordion-card accordion-link-card">
-  <a href="{{ route('admin.buyer.properties.index', ['buyer' => $user->id]) }}"
+  <a href="{{ route('admin.buyers.properties.all') }}"
      class="accordion-header accordion-link">
     <h3>All properties</h3>
     <span class="accordion-icon">↗</span>
@@ -1713,21 +1713,21 @@
 <!-- ====== MY LISTINGS (Dynamic) ====== -->
 {{-- ========== SELLER MODULE LISTINGS + EDIT MODALS (LIGHT THEME) ========== --}}
 
-<div class="seller-list-summary">
+<!-- <div class="seller-list-summary">
   <div class="seller-list-header">
     <h2>Your Uploaded Listings</h2>
     <p>Quick overview of land, building and investment opportunities you’ve listed.</p>
   </div>
 
   <!-- Tabs -->
-  <div class="seller-tabs">
+  <!-- <div class="seller-tabs">
     <button class="seller-tab seller-tab-active" data-target="seller-land-panel">Land</button>
     <button class="seller-tab" data-target="seller-building-panel">Buildings</button>
     <button class="seller-tab" data-target="seller-investment-panel">Investments</button>
-  </div>
+  </div> -->
 
   {{-- ======================= LAND TAB ======================= --}}
-  <div id="seller-land-panel" class="seller-tab-panel seller-tab-panel-active">
+  <!-- <div id="seller-land-panel" class="seller-tab-panel seller-tab-panel-active">
     @forelse($sellerLandListings as $land)
       @php
           $status = strtolower($land->status ?? 'normal');
@@ -1791,7 +1791,7 @@
           {{-- Status modal trigger --}}
           <button type="button"
                   class="listing-btn js-edit-status-btn"
-                  data-url="{{ route('admin.seller.land.status.update', $land->id) }}"
+                  data-url=""
                   data-current-status="{{ $status }}">
             Edit status
           </button>
@@ -2030,10 +2030,10 @@
         No land listings yet. Use the “Land Sale Listing” form above to add your first property.
       </p>
     @endforelse
-  </div>
+  </div> -->
 
   {{-- ======================= BUILDING TAB (fields already match your create form) ======================= --}}
-  <div id="seller-building-panel" class="seller-tab-panel">
+  <!-- <div id="seller-building-panel" class="seller-tab-panel">
     @forelse($sellerBuildingListings as $b)
       @php
           $status = strtolower($b->status ?? 'normal');
@@ -2098,7 +2098,7 @@
         <div class="listing-card-footer">
           <button type="button"
                   class="listing-btn js-edit-status-btn"
-                  data-url="{{ route('admin.seller.building.status.update', $b->id) }}"
+                  data-url=""
                   data-current-status="{{ $status }}">
             Edit status
           </button>
@@ -2266,10 +2266,10 @@
         No building listings yet. Use the “Building Sale Listing” form above.
       </p>
     @endforelse
-  </div>
+  </div> -->
 
   {{-- ======================= INVESTMENT TAB ======================= --}}
-  <div id="seller-investment-panel" class="seller-tab-panel">
+  <!-- <div id="seller-investment-panel" class="seller-tab-panel">
     @forelse($sellerInvestmentListings as $inv)
       @php
           $status = strtolower($inv->status ?? 'open');
@@ -2456,8 +2456,8 @@
         No investment opportunities listed yet.
       </p>
     @endforelse
-  </div>
-</div>
+  </div> -->
+<!-- </div>  -->
 
 {{-- ===== SHARED STATUS EDIT MODAL (uses same light theme CSS) ===== --}}
 <div id="statusEditModal" class="status-modal hidden">

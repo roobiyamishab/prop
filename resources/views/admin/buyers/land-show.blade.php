@@ -306,79 +306,247 @@
 </div>
 @endsection
 
+
 @push('styles')
 <style>
-  /* Simple modal styles – adjust to your design system */
+  /* ---------- PAGE BACKGROUND & WRAPPER ---------- */
+
+  /* Make this screen white instead of ash */
+  .dashboard-main {
+    background: #ffffff !important;
+  }
+
+  .dashboard-screen {
+    max-width: 1100px;
+    margin: 24px auto 40px;
+  }
+
+  /* ---------- TOP BAR & ACTION BUTTONS ---------- */
+
+  .detail-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-table-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 999px;
+    padding: 6px 12px;
+    border: 1px solid #fecaca;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .btn-table-danger:hover {
+    background: #fecaca;
+  }
+
+  /* ---------- DETAIL CARD (WHITE) ---------- */
+
+  .dashboard-screen .detail-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px 32px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    max-width: 960px;
+    margin: 0 auto 32px;
+  }
+
+  /* Labels & values closer together */
+  .dashboard-screen .detail-row {
+    display: flex;
+    justify-content: flex-start;   /* no space-between */
+    align-items: flex-start;
+    gap: 24px;                     /* distance between left & right */
+    padding: 10px 0;
+    border-bottom: 1px dashed #e5e7eb;
+    font-size: 14px;
+  }
+
+  .dashboard-screen .detail-row:last-child {
+    border-bottom: none;
+  }
+
+  .dashboard-screen .detail-label {
+    min-width: 220px;              /* label column */
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+
+  .dashboard-screen .detail-value {
+    flex: 0 1 60%;                 /* value column next to label */
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    text-align: left;              /* not right aligned */
+    word-break: break-word;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-screen .detail-card {
+      padding: 18px 16px;
+      border-radius: 12px;
+    }
+
+    .dashboard-screen .detail-row {
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .dashboard-screen .detail-label {
+      min-width: 0;
+    }
+
+    .dashboard-screen .detail-value {
+      flex: 1;
+    }
+  }
+
+  /* ---------- CENTERED EDIT MODAL ---------- */
+
   .modal-overlay {
     position: fixed;
     inset: 0;
     z-index: 1000;
+    display: none;                 /* shown via JS as flex */
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
   }
+
   .modal-backdrop {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.55);
   }
+
   .modal-content {
     position: relative;
+    width: 100%;
     max-width: 900px;
-    margin: 40px auto;
+    max-height: calc(100vh - 32px);
     background: #ffffff;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 20px 24px;
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
+
   .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
   }
+
   .modal-close-btn {
     border: none;
     background: transparent;
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
+    color: #6b7280;
   }
+
   .modal-body {
-    max-height: 70vh;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    padding-top: 4px;
   }
+
   .form-grid-2 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
   }
+
   .form-group {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
+
   .form-group-full {
-    grid-column: 1/-1;
+    grid-column: 1 / -1;
   }
+
   .form-control {
     border-radius: 8px;
     border: 1px solid #e5e7eb;
     padding: 8px 10px;
     font-size: 14px;
   }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.25);
+  }
+
   .modal-footer {
     margin-top: 16px;
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .btn-table-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border-radius: 999px;
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .btn-table-secondary:hover {
+    background: #e5e7eb;
+  }
+
+  .btn-table-primary {
+    background: #111827;
+    color: #f9f9ff;
+    border-radius: 999px;
+    padding: 6px 16px;
+    border: 1px solid #111827;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .btn-table-primary:hover {
+    background: #020617;
   }
 </style>
 @endpush
+
 
 @push('scripts')
 <script>
   function openLandEditModal() {
     var modal = document.getElementById('land-edit-modal');
     if (modal) {
-      modal.style.display = 'block';
+      modal.style.display = 'flex';   // center via flex (matches CSS above)
     }
   }
 
@@ -388,5 +556,13 @@
       modal.style.display = 'none';
     }
   }
+
+  // Optional: close when clicking on dark backdrop
+  document.addEventListener('click', function (e) {
+    if (e.target.id === 'land-edit-modal') {
+      closeLandEditModal();
+    }
+  });
 </script>
 @endpush
+

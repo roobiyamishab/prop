@@ -19,24 +19,34 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
-            // 🔹 NEW: Which admin created this preference (if created from admin panel)
-            // nullable because normal buyers (front-end) won't have an admin creator
+            // Which admin created this preference (if created from admin panel)
             $table->foreignId('created_by_admin_id')
                   ->nullable()
                   ->constrained('admins')
                   ->nullOnDelete();
 
-            // 🔹 Status of this requirement
+            // Status of this requirement
             // active   = currently searching
             // urgent   = high-priority / immediate requirement
             // completed = requirement fulfilled / closed
             $table->enum('status', ['active', 'urgent', 'completed'])
                   ->default('active');
 
+            /*
+             * Location hierarchy (linked to your world package tables via IDs)
+             * You will typically store arrays of IDs here:
+             *  - preferred_countries => [1, 101]   // country IDs
+             *  - preferred_states    => [5001, 5002] // state IDs
+             *  - preferred_districts => [90001, 90002] // city/district IDs
+             */
+            $table->json('preferred_countries')->nullable();
+            $table->json('preferred_states')->nullable();
             $table->json('preferred_districts')->nullable();
+
+            // More granular free-text locations (areas, localities)
             $table->json('preferred_locations')->nullable();
 
-            // 👇 NEW: Land size unit (cent/acre)
+            // Land size unit (cent/acre)
             $table->string('land_size_unit', 20)->default('cent');
 
             $table->decimal('land_size_needed_min', 10, 2)->nullable();
@@ -54,7 +64,7 @@ return new class extends Migration
 
             $table->json('amenities_preference')->nullable();
 
-            // 👇 RENAMED: use same name as in controller/view
+            // Use same name as in controller/view
             $table->json('infra_preference')->nullable();
 
             $table->timestamps();

@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('seller_investment_listings', function (Blueprint $table) {
@@ -19,7 +16,7 @@ return new class extends Migration
                   ->constrained('users')
                   ->cascadeOnDelete();
 
-            // 🔹 NEW FIELD — admin who created listing
+            // Admin who created listing (nullable)
             $table->unsignedBigInteger('created_by_admin_id')->nullable();
 
             $table->string('property_code', 20)->unique(); // INV100, JV100, COM100 etc.
@@ -31,8 +28,14 @@ return new class extends Migration
             $table->string('project_name', 255);
             $table->string('project_type', 200)->nullable(); // land development, villas, etc.
 
-            // Location
+            // ✅ NEW: Location IDs (from your package tables)
+            $table->unsignedBigInteger('country_id')->nullable()->index();
+            $table->unsignedBigInteger('state_id')->nullable()->index();
+            $table->unsignedBigInteger('district_id')->nullable()->index(); // (city table id)
+
+            // OLD: keep district text for compatibility
             $table->string('district', 100)->nullable();
+
             $table->string('micro_location', 255)->nullable();
             $table->string('landmark', 255)->nullable();
             $table->text('map_link')->nullable();
@@ -52,13 +55,12 @@ return new class extends Migration
 
             $table->timestamps();
 
+            // Indexes
             $table->index(['district', 'project_type']);
+            $table->index(['country_id', 'state_id', 'district_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('seller_investment_listings');

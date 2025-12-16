@@ -57,6 +57,9 @@ Route::middleware('auth:admin')
         Route::get('/buyers/{buyer}/properties', [BuyerPropertyController::class, 'index'])
             ->name('buyer.properties.index');  // => admin.buyer.properties.index
 
+        Route::get('/buyers/properties', [BuyerPropertyController::class, 'all'])
+    ->name('buyers.properties.all');
+
         // ----------------------------------------------------
         // SUPER ADMIN – BUYER PREFERENCES (LAND / BUILDING / INVESTMENT)
         // ----------------------------------------------------
@@ -139,19 +142,24 @@ Route::middleware('auth:admin')
                 Route::post('/investment', [SellerInvestmentListingController::class, 'storeInvestment'])
                     ->name('investment.store');    // => admin.seller.investment.store
 
+
  Route::get('/land/{land}', [SellerLandListingController::class, 'showLand'])
             ->name('land.show');          // admin.seller.land.show
 
-            Route::get('/land/{land}/edit', [AdminSellerListingController::class, 'editLand'])
+            Route::get('/land/{land}/edit', [SellerlandListingController::class, 'editLand'])
                     ->name('land.edit');
+               Route::patch('/land/{land}', [SellerlandListingController::class, 'updateLand'])
+            ->name('land.update'); 
 
                 Route::delete('/land/{land}', [SellerlandListingController::class, 'destroyLand'])
                     ->name('land.destroy');
 
         Route::get('/building/{building}', [SellerBuildingListingController::class, 'showBuilding'])
             ->name('building.show');      // admin.seller.building.show
-              Route::get('/building/{building}/edit', [SellerBuildingListingController::class, 'editBuilding'])
+      Route::get('/building/{building}/edit', [SellerBuildingListingController::class, 'editBuilding'])
                     ->name('building.edit');
+                    Route::patch('/seller/building/{building}', [SellerBuildingListingController::class, 'updateBuilding'])
+    ->name('building.update');
 
                 Route::delete('/building/{building}', [SellerBuildingListingController::class, 'destroyBuilding'])
                     ->name('building.destroy');
@@ -163,28 +171,34 @@ Route::middleware('auth:admin')
 
                 Route::delete('/investment/{investment}', [SellerInvestmentListingController::class, 'destroyInvestment'])
                     ->name('investment.destroy');
+     // EDIT form for investment listing
+        Route::get('/investment/{investment}/edit', [SellerInvestmentListingController::class, 'editInvestment'])
+            ->name('investment.edit');   // admin.seller.investment.edit
+
+        // UPDATE (already similar for land / building)
+        Route::patch('/investment/{investment}', [SellerInvestmentListingController::class, 'updateInvestment'])
+            ->name('investment.update'); // admin.seller.investment.update
 
 
 
+                // // 🔹 UPDATE + STATUS routes (if you already have these in AdminSellerListingController)
+                // Route::patch('/land/{land}/status', [AdminSellerListingController::class, 'updateLandStatus'])
+                //     ->name('land.status.update');
 
-                // 🔹 UPDATE + STATUS routes (if you already have these in AdminSellerListingController)
-                Route::patch('/land/{land}/status', [AdminSellerListingController::class, 'updateLandStatus'])
-                    ->name('land.status.update');
+                // Route::patch('/building/{building}/status', [AdminSellerListingController::class, 'updateBuildingStatus'])
+                //     ->name('building.status.update');
 
-                Route::patch('/building/{building}/status', [AdminSellerListingController::class, 'updateBuildingStatus'])
-                    ->name('building.status.update');
+                // Route::patch('/investment/{investment}/status', [AdminSellerListingController::class, 'updateInvestmentStatus'])
+                //     ->name('investment.status.update');
 
-                Route::patch('/investment/{investment}/status', [AdminSellerListingController::class, 'updateInvestmentStatus'])
-                    ->name('investment.status.update');
+                // Route::patch('/land/{land}', [AdminSellerListingController::class, 'updateLand'])
+                //     ->name('land.update');
 
-                Route::patch('/land/{land}', [AdminSellerListingController::class, 'updateLand'])
-                    ->name('land.update');
+                // Route::patch('/building/{building}', [AdminSellerListingController::class, 'updateBuilding'])
+                //     ->name('building.update');
 
-                Route::patch('/building/{building}', [AdminSellerListingController::class, 'updateBuilding'])
-                    ->name('building.update');
-
-                Route::patch('/investment/{investment}', [AdminSellerListingController::class, 'updateInvestment'])
-                    ->name('investment.update');
+                // Route::patch('/investment/{investment}', [AdminSellerListingController::class, 'updateInvestment'])
+                //     ->name('investment.update');
 
 
                 Route::get('/sellers/{seller}/properties', [SellerPropertyController::class, 'index'])

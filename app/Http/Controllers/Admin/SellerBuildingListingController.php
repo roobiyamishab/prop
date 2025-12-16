@@ -18,8 +18,13 @@ class SellerBuildingListingController extends Controller
         $data = $request->validate([
             'user_id'              => 'required|exists:users,id',
 
+            // ✅ NEW: Location IDs
+            'country_id'           => 'nullable|integer',
+            'state_id'             => 'nullable|integer',
+            'district_id'          => 'nullable|integer',
+
             // Location
-            'district'             => 'required|string|max:120',
+            'district'             => 'required|string|max:120', // keep as text for backward compatibility
             'area'                 => 'nullable|string|max:120',
             'street_name'          => 'nullable|string|max:255',
             'landmark'             => 'nullable|string|max:255',
@@ -36,7 +41,7 @@ class SellerBuildingListingController extends Controller
             'building_age'         => 'nullable|string|max:100',
             'structure_condition'  => 'nullable|string|max:150',
 
-            'lift_available'       => 'nullable',        // checkbox / select (1/0)
+            'lift_available'       => 'nullable',
             'parking_slots'        => 'nullable|integer',
             'road_frontage'        => 'nullable|integer',
 
@@ -58,20 +63,21 @@ class SellerBuildingListingController extends Controller
         $user    = User::find($data['user_id']);
 
         // ---- FILE UPLOADS ----
-
-        // Documents → JSON array
         $documents = [];
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $doc) {
-                $documents[] = $doc->store('building/documents', 'public');
+                if ($doc) {
+                    $documents[] = $doc->store('building/documents', 'public');
+                }
             }
         }
 
-        // Photos → JSON array
         $photos = [];
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $photo) {
-                $photos[] = $photo->store('building/photos', 'public');
+                if ($photo) {
+                    $photos[] = $photo->store('building/photos', 'public');
+                }
             }
         }
 
@@ -82,8 +88,13 @@ class SellerBuildingListingController extends Controller
             'property_code'        => $this->generatePropertyCode('BLD'),
             'status'               => 'normal',
 
+            // ✅ NEW: Location IDs
+            'country_id'           => $data['country_id'] ?? null,
+            'state_id'             => $data['state_id'] ?? null,
+            'district_id'          => $data['district_id'] ?? null,
+
             // Location
-            'district'             => $data['district'],
+            'district'             => $data['district'], // keep string
             'area'                 => $data['area'] ?? null,
             'street_name'          => $data['street_name'] ?? null,
             'landmark'             => $data['landmark'] ?? null,
@@ -140,7 +151,8 @@ class SellerBuildingListingController extends Controller
 
         return sprintf('%s%03d', $prefix, $number);
     }
-     public function showBuilding(SellerBuildingListing $building)
+
+    public function showBuilding(SellerBuildingListing $building)
     {
         $seller = $building->user;
 
@@ -149,7 +161,8 @@ class SellerBuildingListingController extends Controller
             'seller'   => $seller,
         ]);
     }
-     public function destroyBuilding(SellerBuildingListing $building)
+
+    public function destroyBuilding(SellerBuildingListing $building)
     {
         $sellerId = $building->user_id;
         $building->delete();
@@ -157,5 +170,119 @@ class SellerBuildingListingController extends Controller
         return redirect()
             ->route('admin.seller.properties.index', ['seller' => $sellerId, 'tab' => 'building'])
             ->with('success', 'Building listing deleted successfully.');
+    }
+
+    public function editBuilding(SellerBuildingListing $building)
+    {
+        $seller = $building->user;
+
+        return view('admin.seller.building.edit', [
+            'building' => $building,
+            'seller'   => $seller,
+        ]);
+    }
+
+    public function updateBuilding(Request $request, SellerBuildingListing $building)
+    {
+        $data = $request->validate([
+            // ✅ NEW: Location IDs
+            'country_id'            => 'nullable|integer',
+            'state_id'              => 'nullable|integer',
+            'district_id'           => 'nullable|integer',
+
+            // Location
+            'district'              => 'nullable|string|max:120',
+            'area'                  => 'nullable|string|max:120',
+            'street_name'           => 'nullable|string|max:255',
+            'landmark'              => 'nullable|string|max:255',
+            'map_link'              => 'nullable|string',
+
+            'building_type'         => 'nullable|string|max:150',
+            'total_plot_area'       => 'nullable|numeric',
+            'builtup_area'          => 'nullable|numeric',
+            'floors'                => 'nullable|integer',
+            'construction_year'     => 'nullable|integer',
+            'building_age'          => 'nullable|string|max:100',
+            'structure_condition'   => 'nullable|string|max:150',
+
+            'lift_available'        => 'nullable',
+            'parking_slots'         => 'nullable|integer',
+            'road_frontage'         => 'nullable|integer',
+
+            'expected_price'        => 'nullable|numeric',
+            'price_per_sqft'        => 'nullable|numeric',
+            'negotiability'         => 'nullable|string|max:100',
+            'expected_advance_pct'  => 'nullable|integer',
+
+            'status'                => 'required|in:normal,hot,urgent,sold,booked,off_market',
+
+            // files
+            'documents.*'           => 'nullable|file',
+            'photos.*'              => 'nullable|image',
+        ]);
+
+        // ---- HANDLE EXISTING JSON ARRAYS ----
+        $existingDocs = $building->documents ?? [];
+        if (is_string($existingDocs)) $existingDocs = json_decode($existingDocs, true) ?: [];
+        if (!is_array($existingDocs)) $existingDocs = [];
+
+        $existingPhotos = $building->photos ?? [];
+        if (is_string($existingPhotos)) $existingPhotos = json_decode($existingPhotos, true) ?: [];
+        if (!is_array($existingPhotos)) $existingPhotos = [];
+
+        // ---- UPLOAD NEW DOCUMENTS ----
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $doc) {
+                if ($doc) $existingDocs[] = $doc->store('building/documents', 'public');
+            }
+        }
+
+        // ---- UPLOAD NEW PHOTOS ----
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                if ($photo) $existingPhotos[] = $photo->store('building/photos', 'public');
+            }
+        }
+
+        // ✅ NEW: Save IDs
+        $building->country_id  = $data['country_id'] ?? $building->country_id;
+        $building->state_id    = $data['state_id'] ?? $building->state_id;
+        $building->district_id = $data['district_id'] ?? $building->district_id;
+
+        // ---- UPDATE FIELDS ----
+        $building->district            = $data['district'] ?? $building->district;
+        $building->area                = $data['area'] ?? $building->area;
+        $building->street_name         = $data['street_name'] ?? $building->street_name;
+        $building->landmark            = $data['landmark'] ?? $building->landmark;
+        $building->map_link            = $data['map_link'] ?? $building->map_link;
+
+        $building->building_type       = $data['building_type'] ?? $building->building_type;
+        $building->total_plot_area     = $data['total_plot_area'] ?? $building->total_plot_area;
+        $building->builtup_area        = $data['builtup_area'] ?? $building->builtup_area;
+        $building->floors              = $data['floors'] ?? $building->floors;
+        $building->construction_year   = $data['construction_year'] ?? $building->construction_year;
+        $building->building_age        = $data['building_age'] ?? $building->building_age;
+        $building->structure_condition = $data['structure_condition'] ?? $building->structure_condition;
+
+        $building->lift_available      = $request->boolean('lift_available');
+        $building->parking_slots       = $data['parking_slots'] ?? $building->parking_slots;
+        $building->road_frontage       = $data['road_frontage'] ?? $building->road_frontage;
+
+        $building->expected_price      = $data['expected_price'] ?? $building->expected_price;
+        $building->price_per_sqft      = $data['price_per_sqft'] ?? $building->price_per_sqft;
+        $building->negotiability       = $data['negotiability'] ?? $building->negotiability;
+        $building->expected_advance_pct= $data['expected_advance_pct'] ?? $building->expected_advance_pct;
+
+        $building->status              = $data['status'];
+
+        // Save JSON fields
+        $building->documents = $existingDocs ?: null;
+        $building->photos    = $existingPhotos ?: null;
+
+        $building->save();
+
+        return redirect()
+            ->route('admin.seller.building.show', $building)
+            ->with('success', 'Building listing updated successfully.');
     }
 }

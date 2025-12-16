@@ -89,7 +89,7 @@
       View
     </a>
 
-    <a href="" class="btn-table btn-table-edit">
+    <a href="{{ route('admin.seller.land.edit', $land) }}" class="btn-table btn-table-edit">
       Edit
     </a>
 
