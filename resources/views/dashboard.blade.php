@@ -2162,6 +2162,243 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const statesByCountry  = @json($statesByCountry ?? []);
+  const districtsByState = @json($districtsByState ?? []);
+
+  function reset(selectEl, placeholder) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+  }
+
+  function populateStates(countryId, stateSelect) {
+    reset(stateSelect, 'Select State');
+    if (!countryId || !statesByCountry[countryId]) return;
+
+    statesByCountry[countryId].forEach(st => {
+      const o = document.createElement('option');
+      o.value = st.name;           // ✅ keep old behavior (value = name)
+      o.dataset.id = st.id;        // ✅ store id in data-id for next step
+      o.textContent = st.name;
+      stateSelect.appendChild(o);
+    });
+  }
+
+  function populateDistricts(stateId, districtSelect) {
+    reset(districtSelect, 'Select District');
+    if (!stateId || !districtsByState[stateId]) return;
+
+    districtsByState[stateId].forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.name;            // ✅ keep old behavior (value = name)
+      o.dataset.id = d.id;
+      o.textContent = d.name;
+      districtSelect.appendChild(o);
+    });
+  }
+
+  // ---- LAND selects (your existing IDs) ----
+  const countrySel  = document.getElementById('land-country-select');
+  const stateSel    = document.getElementById('land-state-select');
+  const districtSel = document.getElementById('land-district-select');
+
+  if (countrySel && stateSel && districtSel) {
+
+    countrySel.addEventListener('change', function () {
+      const countryId = this.options[this.selectedIndex]?.dataset?.id || null;
+
+      populateStates(countryId, stateSel);
+      reset(districtSel, 'Select District');
+    });
+
+    stateSel.addEventListener('change', function () {
+      const stateId = this.options[this.selectedIndex]?.dataset?.id || null;
+
+      populateDistricts(stateId, districtSel);
+    });
+
+    // Optional: if country already selected (edit/old input), auto-load states
+    const initialCountryId = countrySel.options[countrySel.selectedIndex]?.dataset?.id || null;
+    if (initialCountryId) {
+      populateStates(initialCountryId, stateSel);
+    }
+  }
+
+ 
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const statesByCountry  = @json($statesByCountry ?? []);
+  const districtsByState = @json($districtsByState ?? []);
+
+  function resetSelect(selectEl, placeholder) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+  }
+
+  // Read selected option's data-id (since value is NAME in your form)
+  function getSelectedId(selectEl) {
+    if (!selectEl) return null;
+    const opt = selectEl.options[selectEl.selectedIndex];
+    return opt ? (opt.dataset.id || null) : null;
+  }
+
+  // Create option where value = NAME (for your existing backend),
+  // but data-id = ID (for cascading)
+  function makeOption(name, id) {
+    const o = document.createElement('option');
+    o.value = name;         // keep your current behavior
+    o.textContent = name;
+    o.dataset.id = String(id);
+    return o;
+  }
+
+  function populateStates(countrySelect, stateSelect, districtSelect) {
+    resetSelect(stateSelect, 'Select State');
+    resetSelect(districtSelect, 'Select District');
+
+    const countryId = getSelectedId(countrySelect);
+    if (!countryId || !statesByCountry[countryId]) return;
+
+    statesByCountry[countryId].forEach(function (st) {
+      stateSelect.appendChild(makeOption(st.name, st.id));
+    });
+  }
+
+  function populateDistricts(stateSelect, districtSelect) {
+    resetSelect(districtSelect, 'Select District');
+
+    const stateId = getSelectedId(stateSelect);
+    if (!stateId || !districtsByState[stateId]) return;
+
+    districtsByState[stateId].forEach(function (d) {
+      districtSelect.appendChild(makeOption(d.name, d.id));
+    });
+  }
+
+  // -------- LAND --------
+  const landCountry  = document.getElementById('land-country-select');
+  const landState    = document.getElementById('land-state-select');
+  const landDistrict = document.getElementById('land-district-select');
+
+  if (landCountry && landState && landDistrict) {
+    landCountry.addEventListener('change', function () {
+      populateStates(landCountry, landState, landDistrict);
+    });
+
+    landState.addEventListener('change', function () {
+      populateDistricts(landState, landDistrict);
+    });
+  }
+
+  // -------- BUILDING --------
+  const bCountry  = document.getElementById('building-country-select');
+  const bState    = document.getElementById('building-state-select');
+  const bDistrict = document.getElementById('building-district-select');
+
+  if (bCountry && bState && bDistrict) {
+    bCountry.addEventListener('change', function () {
+      populateStates(bCountry, bState, bDistrict);
+    });
+
+    bState.addEventListener('change', function () {
+      populateDistricts(bState, bDistrict);
+    });
+  }
+
+  // -------- INVESTMENT --------
+  const iCountry  = document.getElementById('investment-country-select');
+  const iState    = document.getElementById('investment-state-select');
+  const iDistrict = document.getElementById('investment-district-select');
+
+  if (iCountry && iState && iDistrict) {
+    iCountry.addEventListener('change', function () {
+      populateStates(iCountry, iState, iDistrict);
+    });
+
+    iState.addEventListener('change', function () {
+      populateDistricts(iState, iDistrict);
+    });
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const statesByCountry  = @json($statesByCountry ?? []);
+  const districtsByState = @json($districtsByState ?? []);
+
+  const countrySel  = document.getElementById('investment-country-select');
+  const stateSel    = document.getElementById('investment-state-select');
+  const districtSel = document.getElementById('investment-district-select');
+
+  function resetSelect(selectEl, placeholder) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+  }
+
+  // Your <option value=""> is NAME, the ID is in data-id.
+  function getSelectedId(selectEl) {
+    if (!selectEl) return null;
+    const opt = selectEl.options[selectEl.selectedIndex];
+    return opt ? (opt.dataset.id || null) : null;
+  }
+
+  // Keep value as NAME (same as your form), but store id in data-id for cascade.
+  function appendOption(selectEl, name, id) {
+    const o = document.createElement('option');
+    o.value = name;
+    o.textContent = name;
+    o.dataset.id = String(id);
+    selectEl.appendChild(o);
+  }
+
+  function populateStates() {
+    resetSelect(stateSel, 'Select State');
+    resetSelect(districtSel, 'Select District');
+
+    const countryId = getSelectedId(countrySel);
+    if (!countryId || !statesByCountry[countryId]) return;
+
+    statesByCountry[countryId].forEach(function (st) {
+      appendOption(stateSel, st.name, st.id);
+    });
+  }
+
+  function populateDistricts() {
+    resetSelect(districtSel, 'Select District');
+
+    const stateId = getSelectedId(stateSel);
+    if (!stateId || !districtsByState[stateId]) return;
+
+    districtsByState[stateId].forEach(function (d) {
+      appendOption(districtSel, d.name, d.id);
+    });
+  }
+
+  // Events
+  if (countrySel && stateSel && districtSel) {
+    countrySel.addEventListener('change', populateStates);
+    stateSel.addEventListener('change', populateDistricts);
+
+    // Optional: if country already selected on page load
+    if (countrySel.value) populateStates();
+  }
+});
+</script>
 
 
 </body>

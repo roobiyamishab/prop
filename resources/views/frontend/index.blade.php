@@ -52,7 +52,7 @@
                                 Smart. Secure. Profitable. Discover AI-driven property insights, investment scoring, and personalized matching for smarter real estate decisions.
                             </p>
                             <form action="#">
-                                <input type="text" name="text" placeholder="Ask DolphinIQ: 'Find 3BHK apartments...!">
+                                <input type="text" name="text" placeholder="Ask AIPropMatchIQ: 'Find 3BHK apartments...!">
                                 <a href="" class="btn btn--border">
                                     Search
                                 </a>
@@ -78,7 +78,7 @@
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
                         <div class="section-title text-center">
-                            <span class="sub-title top-reveal">DolphinIQ</span>
+                            <span class="sub-title top-reveal">AIPropMatchIQ</span>
                             <h2 class="top-reveal">Real Estate</h2>
                         </div>
                     </div>
@@ -90,8 +90,9 @@
                                 <img src="{{ asset('frontend/assets/images/icon/building.png') }}">
                             </div>
                             <div class="text">
-                                <h5>Real Estate</h5>
-                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                <h5>AIPropMatch Engine</h5>
+                                <p>Your personal AI Property Browser — analyzing millions of data points to simplify
+                                        real estate investment decisions with precision and confidence.</p>
                             </div>
                         </div>
                     </div>
@@ -101,8 +102,8 @@
                                 <img src="{{ asset('frontend/assets/images/icon/building.png') }}">
                             </div>
                             <div class="text">
-                                <h5>Real Estate</h5>
-                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                <h5>ISS Score</h5>
+                                <p>Each property is evaluated using 25+ parameters including location intelligence, appreciation history, rental yield, development potential, and legal health.</p>
                             </div>
                         </div>
                     </div>
@@ -112,8 +113,8 @@
                                 <img src="{{ asset('frontend/assets/images/icon/building.png') }}">
                             </div>
                             <div class="text">
-                                <h5>Real Estate</h5>
-                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                <h5>Smart Matching</h5>
+                                <p>AI matches investors with properties that align perfectly with their budget, investment goals, and risk appetite.</p>
                             </div>
                         </div>
                     </div>
@@ -123,8 +124,8 @@
                                 <img src="{{ asset('frontend/assets/images/icon/building.png') }}">
                             </div>
                             <div class="text">
-                                <h5>Real Estate</h5>
-                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                                <h5>Predictive Insights</h5>
+                                <p>Identifies early market shifts, price trends, and future appreciation hotspots before they go mainstream.</p>
                             </div>
                         </div>
                     </div>

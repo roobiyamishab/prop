@@ -415,117 +415,130 @@ class SellerListingController extends Controller
     /* =========================================================
      * LAND: UPDATE (OWNER ONLY)
      * ========================================================= */
-    public function updateLand(Request $request, SellerLandListing $land)
-    {
-        abort_if($land->user_id !== Auth::id(), 403);
+   public function updateLand(Request $request, $id)
+{
+    // ✅ Option B: fetch by id + user_id (no abort_if needed)
+    $land = SellerLandListing::where('id', $id)
+        ->where('user_id', Auth::id())
+        ->firstOrFail();
 
-        $data = $request->validate([
-            'country_id'   => 'nullable|exists:countries,id',
-            'state_id'     => 'nullable|exists:states,id',
-            'district_id'  => 'nullable|exists:cities,id',
+    $data = $request->validate([
+        'country_id'   => 'nullable|exists:countries,id',
+        'state_id'     => 'nullable|exists:states,id',
+        'district_id'  => 'nullable|exists:cities,id',
 
-            'district'     => 'nullable|required_without:district_id|string|max:120',
+        // district text only required if district_id not provided
+        'district'     => 'nullable|required_without:district_id|string|max:120',
 
-            'taluk'        => 'nullable|string|max:120',
-            'village'      => 'nullable|string|max:120',
-            'exact_location' => 'nullable|string|max:255',
-            'landmark'     => 'nullable|string|max:255',
-            'google_map_link' => 'nullable|string',
+        'taluk'        => 'nullable|string|max:120',
+        'village'      => 'nullable|string|max:120',
+        'exact_location' => 'nullable|string|max:255',
+        'landmark'     => 'nullable|string|max:255',
+        'survey_no'    => 'nullable|string|max:120',
+        'google_map_link' => 'nullable|string',
 
-            'land_area'    => 'nullable|numeric',
-            'land_unit'    => 'nullable|in:cent,acre,sqft',
-            'road_frontage'=> 'nullable|integer',
-            'plot_shape'   => 'nullable|string|max:100',
-            'zoning_type'  => 'nullable|string|max:120',
-            'ownership_type'=> 'nullable|string|max:100',
-            'restrictions' => 'nullable|string',
+        'land_area'    => 'nullable|numeric',
+        'land_unit'    => 'nullable|in:cent,acre,sqft',
+        'proximity'    => 'nullable|string|max:150',
+        'road_frontage'=> 'nullable|integer',
+        'plot_shape'   => 'nullable|string|max:100',
 
-            'expected_price_per_cent' => 'nullable|numeric',
-            'negotiability'=> 'nullable|string|max:50',
-            'expected_advance_pct' => 'nullable|integer|min:0|max:100',
-            'sale_timeline'=> 'nullable|string|max:100',
-            'land_type'    => 'nullable|string|max:100',
-            'current_use'  => 'nullable|string|max:100',
+        'zoning_type'  => 'nullable|string|max:120',
+        'ownership_type'=> 'nullable|string|max:100',
+        'restrictions' => 'nullable|string',
 
-            'electricity'  => 'nullable|in:0,1',
-            'water'        => 'nullable|in:0,1',
-            'drainage'     => 'nullable|in:0,1',
+        'expected_price_per_cent' => 'nullable|numeric',
+        'negotiability'=> 'nullable|string|max:50',
+        'expected_advance_pct' => 'nullable|integer|min:0|max:100',
+        'min_offer_expected'   => 'nullable|numeric',
+        'market_value_info'    => 'nullable|string',
 
-            'land_tax_receipt' => 'nullable|file',
-            'location_sketch'  => 'nullable|file',
-            'photos.*'         => 'nullable|image',
-            'video'            => 'nullable|file',
-        ]);
+        'land_type'    => 'nullable|string|max:100',
+        'current_use'  => 'nullable|string|max:100',
 
-        [, , $districtNameFromId] = $this->locationNamesFromIds(
-            $data['country_id'] ?? null,
-            $data['state_id'] ?? null,
-            $data['district_id'] ?? null
-        );
-        $finalDistrictText = $districtNameFromId ?: ($data['district'] ?? null);
+        // your form sends 1/0
+        'electricity'  => 'nullable|in:0,1',
+        'water'        => 'nullable|in:0,1',
+        'drainage'     => 'nullable|in:0,1',
+        'compound_wall'=> 'nullable|in:0,1',
 
-        $documents = is_array($land->documents) ? $land->documents : [];
+        'sale_timeline'=> 'nullable|string|max:100',
 
-        if ($request->hasFile('land_tax_receipt')) {
-            $documents['land_tax_receipt'] = $request->file('land_tax_receipt')->store('land/documents', 'public');
-        }
-        if ($request->hasFile('location_sketch')) {
-            $documents['location_sketch'] = $request->file('location_sketch')->store('land/documents', 'public');
-        }
+        // uploads (same names as your modal)
+        'land_tax_receipt' => 'nullable|file',
+        'location_sketch'  => 'nullable|file',
+        'photos.*'         => 'nullable|image',
+        'video'            => 'nullable|file',
+    ]);
 
-        $photos = is_array($land->photos) ? $land->photos : [];
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $photo) {
-                $photos[] = $photo->store('land/photos', 'public');
-            }
-        }
+    // ✅ keep existing JSON arrays safely
+    $documents = is_array($land->documents) ? $land->documents : (json_decode($land->documents, true) ?: []);
+    $photos    = is_array($land->photos)    ? $land->photos    : (json_decode($land->photos, true) ?: []);
+    $videos    = is_array($land->videos)    ? $land->videos    : (json_decode($land->videos, true) ?: []);
 
-        $videos = is_array($land->videos) ? $land->videos : [];
-        if ($request->hasFile('video')) {
-            $videos = [];
-            $videos[] = $request->file('video')->store('land/videos', 'public');
-        }
-
-        $land->country_id      = $data['country_id'] ?? null;
-        $land->state_id        = $data['state_id'] ?? null;
-        $land->district_id     = $data['district_id'] ?? null;
-
-        $land->district        = $finalDistrictText;
-        $land->taluk           = $data['taluk'] ?? null;
-        $land->village         = $data['village'] ?? null;
-        $land->exact_location  = $data['exact_location'] ?? null;
-        $land->landmark        = $data['landmark'] ?? null;
-        $land->google_map_link = $data['google_map_link'] ?? null;
-
-        $land->land_area       = $data['land_area'] ?? null;
-        $land->land_unit       = $data['land_unit'] ?? 'cent';
-        $land->road_frontage   = $data['road_frontage'] ?? null;
-        $land->plot_shape      = $data['plot_shape'] ?? null;
-
-        $land->zoning_type     = $data['zoning_type'] ?? null;
-        $land->ownership_type  = $data['ownership_type'] ?? null;
-        $land->restrictions    = $data['restrictions'] ?? null;
-
-        $land->expected_price_per_cent = $data['expected_price_per_cent'] ?? null;
-        $land->negotiability   = $data['negotiability'] ?? null;
-        $land->expected_advance_pct = $data['expected_advance_pct'] ?? null;
-        $land->sale_timeline   = $data['sale_timeline'] ?? null;
-
-        $land->land_type       = $data['land_type'] ?? null;
-        $land->current_use     = $data['current_use'] ?? null;
-
-        $land->electricity     = ((int)($data['electricity'] ?? 0) === 1);
-        $land->water           = ((int)($data['water'] ?? 0) === 1);
-        $land->drainage        = ((int)($data['drainage'] ?? 0) === 1);
-
-        $land->documents       = !empty($documents) ? $documents : null;
-        $land->photos          = !empty($photos) ? $photos : null;
-        $land->videos          = !empty($videos) ? $videos : null;
-
-        $land->save();
-
-        return back()->with('success', 'Land listing updated successfully.');
+    // ✅ if district_id present, use DB name, else fallback to typed district
+    $districtNameFromId = null;
+    if (!empty($data['district_id'])) {
+        $districtNameFromId = \App\Models\City::where('id', $data['district_id'])->value('name');
     }
+    $finalDistrictText = $districtNameFromId ?: ($data['district'] ?? $land->district);
+
+    // ✅ update ONLY if field exists in request (prevents nulling)
+    $land->country_id = $request->filled('country_id') ? $data['country_id'] : $land->country_id;
+    $land->state_id   = $request->filled('state_id')   ? $data['state_id']   : $land->state_id;
+    $land->district_id= $request->filled('district_id')? $data['district_id']: $land->district_id;
+
+    if ($request->has('district_id') || $request->has('district')) {
+        $land->district = $finalDistrictText;
+    }
+
+    foreach ([
+        'taluk','village','exact_location','landmark','survey_no','google_map_link',
+        'land_area','land_unit','proximity','road_frontage','plot_shape',
+        'zoning_type','ownership_type','restrictions',
+        'expected_price_per_cent','negotiability','expected_advance_pct',
+        'min_offer_expected','market_value_info',
+        'land_type','current_use','sale_timeline',
+    ] as $field) {
+        if ($request->has($field)) {
+            $land->{$field} = $data[$field] ?? null;
+        }
+    }
+
+    // ✅ booleans (only update if field present)
+    if ($request->has('electricity'))   $land->electricity   = ((int)$data['electricity'] === 1);
+    if ($request->has('water'))         $land->water         = ((int)$data['water'] === 1);
+    if ($request->has('drainage'))      $land->drainage      = ((int)$data['drainage'] === 1);
+    if ($request->has('compound_wall')) $land->compound_wall = ((int)$data['compound_wall'] === 1);
+
+    // ✅ uploads: keep old + replace single where needed
+    if ($request->hasFile('land_tax_receipt')) {
+        $documents['land_tax_receipt'] = $request->file('land_tax_receipt')->store('land/documents', 'public');
+    }
+    if ($request->hasFile('location_sketch')) {
+        $documents['location_sketch'] = $request->file('location_sketch')->store('land/documents', 'public');
+    }
+
+    if ($request->hasFile('photos')) {
+        foreach ($request->file('photos') as $photo) {
+            $photos[] = $photo->store('land/photos', 'public');
+        }
+    }
+
+    if ($request->hasFile('video')) {
+        // replace video
+        $videos = [];
+        $videos[] = $request->file('video')->store('land/videos', 'public');
+    }
+
+    $land->documents = !empty($documents) ? $documents : null;
+    $land->photos    = !empty($photos) ? $photos : null;
+    $land->videos    = !empty($videos) ? $videos : null;
+
+    $land->save();
+
+    return back()->with('success', 'Land listing updated successfully.');
+}
 
     /* =========================================================
      * BUILDING: UPDATE (OWNER ONLY)

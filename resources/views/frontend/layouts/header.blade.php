@@ -1,7 +1,7 @@
 {{-- Preloader --}}
 <div id="preloader">
   <div id="text">
-    <p>D</p><p>O</p><p>L</p><p>P</p><p>H</p><p>I</p><p class="active">N</p>
+    <p>A</p><p>I</p><p>P</p><p>R</p><p>O</p><p>P</p><p>M</p><p>A</p><p>T</p><p>C</p><p>H</p><p class="active"></p>
   </div>
 </div>
 
@@ -112,7 +112,7 @@
           <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('front.contact') ? 'active' : '' }}"
                href="{{ route('front.contact') }}">
-              <span>Contacts</span>
+              <span>Contact us</span>
             </a>
           </li>
 

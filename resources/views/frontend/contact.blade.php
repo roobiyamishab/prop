@@ -35,7 +35,7 @@
                             <i class="fa-solid fa-phone-volume"></i>
                             <h4>Phone:</h4>
                             <p>
-                                <a href="tel:+91">+91 9999 999 999</a>
+                                <a href="tel:+91">+91 9447 9447 35</a>
                             </p>
                         </div>
                     </div>
@@ -44,7 +44,7 @@
                             <i class="fa-solid fa-location-dot"></i>
                             <h4>Address:</h4>
                             <p>
-                                DolphinIQ
+                                AIPropMatch
                             </p>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                             <i class="fa-solid fa-envelope"></i>
                             <h4>Email:</h4>
                             <p>
-                                <a href=""><span>test@gmail.com</span></a>
+                                <a href=""><span>hello@aipropmatch.com</span></a>
                             </p>
                         </div>
                     </div>
@@ -86,7 +86,7 @@
         </section>
 
 
-
+  
     </main>
 
    @endsection

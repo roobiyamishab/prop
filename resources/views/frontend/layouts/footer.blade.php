@@ -5,11 +5,11 @@
                     <div class="col-lg-4 col-md-12">
                         <div class="footer-widget__item text-center text-lg-start">
                             <a href="index.html" class="d-block">
-                                <img src="assets/images/logo/aipro.jpg" alt="logo">
+                                <img src="{{ asset('frontend/assets/images/logo/aipro.jpg') }}" alt="logo">
                             </a>
                             <br>
                             <p>
-                               Lorem Ipsum is simply dummy text of the printing...
+                               Where Real Estate Meets Intelligence...
                             </p>
                     
                         </div>
@@ -37,10 +37,10 @@
                             <div class="footer-widget__item">
                                 <h4>Contact Us</h4>
                             <div class="footer-email">
-                                <a href=""><span>test@gmail.com</span></a>
+                                <a href=""><span>hello@aipropmatch.com</span></a>
                             </div>
                             <div class="footer-phone">
-                                <h4><a href="tel:+">+91 9999 999 999</a></h4>
+                                <h4><a href="tel:+">+91 9447 9447 35</a></h4>
                             </div>
 
                             <ul class="social">
@@ -74,7 +74,7 @@
                     <div class="col-lg-12">
                         <div class="copy-right__content">
                             <p class="copy-right__text">
-                                Copyright © 2025 All Rights Reserved By <a href="#">Dolphin</a>
+                                Copyright © 2025 All Rights Reserved By <a href="#">AIPropMatch</a>
                             </p>
                         </div>
                     </div>
